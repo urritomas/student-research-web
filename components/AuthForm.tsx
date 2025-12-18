@@ -111,27 +111,27 @@ function AuthForm({ mode }: { mode: Mode }) {
       <Button children='hello' color='alert' size='lg'/>
       <Button children='hello' color='accent' size='xl'/> */}
       <form onSubmit={handleSubmit} className="flex flex-col justify-center bg-lightGray rounded-lg border-darkSlateBlue border-2 shadow-xl p-6 m-3">
-        <h1 className="text-2xl text-center text-darkSlateBlue font-bold">
+        <h1 className="text-2xl text-center text-darkSlateBlue font-bold mb-1">
           {mode === "login" ? "Login" : "Register"}
         </h1>
         
         {mode === "register" && (
           <div className="flex flex-wrap items-center">
             <input
-              className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 pb-4 pt-4 border-slate-300 my-5 border-2 rounded-sm"
+              className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 mt-4 py-5 border-slate-300 border-2 rounded-lg transition duration-150 hover:border-slate-400"
               type="text"
               placeholder="Full Name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
             />
-            <FaUser className="absolute right-14" />
+            <FaUser className="absolute top-[99px] right-14 transition duration-150 hover:scale-110" />
           </div>
         )}
 
         <div className="flex flex-wrap items-center">
           <input
-            className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 py-5 border-slate-300 my-5 border-2 rounded-lg transition duration-150 hover:border-slate-400"
+            className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 mt-3 mb-3 py-5 border-slate-300  border-2 rounded-lg transition duration-150 hover:border-slate-400"
             type="email"
             placeholder="Email"
             value={email}
@@ -155,11 +155,11 @@ function AuthForm({ mode }: { mode: Mode }) {
         </div>
 
         {mode === "login" && (
-          <div className="flex justify-between items-center my-4">
+          <div className="flex justify-between items-center mt-4 mb-1">
             <div className="flex items-center transition duration-150">
               <input 
                 id="rememberMe" 
-                className="accent-darkSlateBlue transition duration-150"
+                className="accent-darkSlateBlue scale-110transition duration-150"
                 type="checkbox" 
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
@@ -176,7 +176,7 @@ function AuthForm({ mode }: { mode: Mode }) {
         )}
 
         {message && (
-          <div className={`text-darkSlateBlue text-sm text-center my-2 ${message.includes("error") || message.includes("Failed") ? "text-red-600" : "text-green-600"}`}>
+          <div className={`text-darkSlateBlue text-sm text-center my-2 ${message.includes("error") || message.includes("Failed") || message.includes("invalid") || message.includes("already") ? "text-red-600" : "text-green-600"}`}>
             {message}
           </div>
         )}
@@ -184,12 +184,12 @@ function AuthForm({ mode }: { mode: Mode }) {
         <button 
           type="submit"
           disabled={loading}
-          className="text-darkSlateBlue bg-skyBlue rounded-lg my-2 w-4/5 p-2 self-center cursor-pointer hover:bg-blue-400 hover:text-white hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed duration-150"
+          className="text-darkSlateBlue bg-skyBlue rounded-lg mt-4 mb-1 w-4/5 p-2 self-center cursor-pointer hover:bg-blue-400 hover:text-white hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed duration-150"
         >
           {loading ? "Loading..." : mode === "login" ? "Login" : "Register"}
         </button>
 
-        <div className="flex justify-center my-3">
+        <div className="flex justify-center mt-3 mb-3">
           <GoogleSignInButton />
         </div>
 
