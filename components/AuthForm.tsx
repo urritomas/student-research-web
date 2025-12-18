@@ -32,7 +32,7 @@ function GoogleSignInButton() {
         setLoading(false);
       }
     };
-  
+
     return (
       <button
         onClick={handleGoogleSignIn}
@@ -67,14 +67,25 @@ function AuthForm({ mode }: { mode: Mode }) {
 
     try {
       if (mode === "register") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName } },
+          options: { 
+            data: { full_name: fullName },
+            emailRedirectTo: `${window.location.origin}/home`
+          },
         });
+        
         if (error) throw error;
-        setMessage("Registration successful — check your email if needed.");
-        router.push("/home");
+        
+        if (data?.user?.identities?.length === 0) {
+          setMessage("This email is already registered. Please login instead.");
+        } else if (data?.user && !data.session) {
+          setMessage("Registration successful! Please check your email to verify your account.");
+        } else {
+          setMessage("Registration successful!");
+          router.push("/home");
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -85,6 +96,7 @@ function AuthForm({ mode }: { mode: Mode }) {
         router.push("/home");
       }
     } catch (err: any) {
+      console.error("Auth error:", err);
       setMessage(err.message || String(err));
     } finally {
       setLoading(false);
@@ -101,7 +113,7 @@ function AuthForm({ mode }: { mode: Mode }) {
         {mode === "register" && (
           <div className="flex flex-wrap items-center">
             <input
-              className="w-full h-8 bg-slate-100 outline-none pl-3 pr-10 pb-4 pt-4 border-slate-300 my-5 border-2 rounded-sm"
+              className="w-full h-8 bg-slate-100 outline-none pl-3 pr-10 pb-4 pt-4 border-slate-300 mt-3 border-2 rounded-sm"
               type="text"
               placeholder="Full Name"
               value={fullName}
@@ -126,7 +138,8 @@ function AuthForm({ mode }: { mode: Mode }) {
 
         <div className="flex flex-wrap items-center">
           <input
-            className="w-full h-8 bg-slate-100 outline-none pl-3 pr-10 pb-4 pt-4 border-slate-300 border-2 rounded-sm"
+                      
+            className="w-full h-8 bg-slate-100 outline-none pl-3 pr-10 pb-4 pt-4 border-slate-300 mb-3 border-2 rounded-sm"
             type="password"
             placeholder="Password"
             value={password}
