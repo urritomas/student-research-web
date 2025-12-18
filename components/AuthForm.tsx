@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabaseClient";
 import { FaUser } from "react-icons/fa";
 import { FaLock } from "react-icons/fa"; 
+import Button from "./Button"
 
 type Mode = "login" | "register";
 
@@ -37,7 +38,7 @@ function GoogleSignInButton() {
       <button
         onClick={handleGoogleSignIn}
         disabled={loading}
-        className="flex items-center justify-center w-12 h-12 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center justify-center w-12 h-12 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition duration-100 hover:scale-110"
         aria-label="Sign in with Google"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -93,15 +94,19 @@ function AuthForm({ mode }: { mode: Mode }) {
 
   return (
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] md:scale-110 ">
-      <form onSubmit={handleSubmit} className="flex flex-col justify-center bg-slate-100 rounded-md border-slate-400 shadow-lg p-6 m-3">
-        <h1 className="text-2xl text-center font-bold">
+      {/* <Button children='hello' color='primaryTxt' size='sm'/>
+      <Button children='hello' color='success' size='md'/>
+      <Button children='hello' color='alert' size='lg'/>
+      <Button children='hello' color='accent' size='xl'/> */}
+      <form onSubmit={handleSubmit} className="flex flex-col justify-center bg-lightGray rounded-lg border-darkSlateBlue border-2 shadow-xl p-6 m-3">
+        <h1 className="text-2xl text-center text-darkSlateBlue font-bold">
           {mode === "login" ? "Login" : "Register"}
         </h1>
         
         {mode === "register" && (
           <div className="flex flex-wrap items-center">
             <input
-              className="w-full h-8 bg-slate-100 outline-none pl-3 pr-10 pb-4 pt-4 border-slate-300 my-5 border-2 rounded-sm"
+              className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 pb-4 pt-4 border-slate-300 my-5 border-2 rounded-sm"
               type="text"
               placeholder="Full Name"
               value={fullName}
@@ -114,19 +119,19 @@ function AuthForm({ mode }: { mode: Mode }) {
 
         <div className="flex flex-wrap items-center">
           <input
-            className="w-full h-8 bg-slate-100 outline-none pl-3 pr-10 pb-4 pt-4 border-slate-300 my-5 border-2 rounded-sm"
+            className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 py-5 border-slate-300 my-5 border-2 rounded-lg transition duration-150 hover:border-slate-400"
             type="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <FaUser className="absolute right-14" />
+          <FaUser className="absolute right-14 transition duration-150 hover:scale-110" />
         </div>
 
         <div className="flex flex-wrap items-center">
           <input
-            className="w-full h-8 bg-slate-100 outline-none pl-3 pr-10 pb-4 pt-4 border-slate-300 border-2 rounded-sm"
+            className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 py-5 border-slate-300 border-2 rounded-lg transition duration-150 hover:border-slate-400"
             type="password"
             placeholder="Password"
             value={password}
@@ -134,31 +139,32 @@ function AuthForm({ mode }: { mode: Mode }) {
             required
             minLength={6}
           />
-          <FaLock className="absolute right-14" />
+          <FaLock className="absolute right-14 transition duration-150 hover:scale-110" />
         </div>
 
         {mode === "login" && (
-          <div className="flex justify-between items-center my-3">
-            <div className="flex items-center">
+          <div className="flex justify-between items-center my-4">
+            <div className="flex items-center transition duration-150">
               <input 
                 id="rememberMe" 
+                className="accent-darkSlateBlue transition duration-150"
                 type="checkbox" 
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
               />
-              <label className="ml-2 text-sm" htmlFor="rememberMe">
+              <label className="text-darkSlateBlue ml-2 text-sm transition duration-150 hover:text-blue-600" htmlFor="rememberMe">
                 Remember me
               </label>
             </div>
 
-            <a href="#" className="ml-2 text-sm">
+            <a href="#" className="text-darkSlateBlue ml-2 text-sm transition duration-150 hover:text-blue-600">
               Forgot Password?
             </a>
           </div>
         )}
 
         {message && (
-          <div className={`text-sm text-center my-2 ${message.includes("error") || message.includes("Failed") ? "text-red-600" : "text-green-600"}`}>
+          <div className={`text-darkSlateBlue text-sm text-center my-2 ${message.includes("error") || message.includes("Failed") ? "text-red-600" : "text-green-600"}`}>
             {message}
           </div>
         )}
@@ -166,7 +172,7 @@ function AuthForm({ mode }: { mode: Mode }) {
         <button 
           type="submit"
           disabled={loading}
-          className="bg-cyan-200 rounded-sm my-2 w-4/5 p-1 self-center cursor-pointer hover:bg-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-darkSlateBlue bg-skyBlue rounded-lg my-2 w-4/5 p-2 self-center cursor-pointer hover:bg-blue-400 hover:text-white hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed duration-150"
         >
           {loading ? "Loading..." : mode === "login" ? "Login" : "Register"}
         </button>
@@ -175,9 +181,9 @@ function AuthForm({ mode }: { mode: Mode }) {
           <GoogleSignInButton />
         </div>
 
-        <p className="text-center text-sm">
+        <p className="text-darkSlateBlue text-center text-sm">
           {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-          <a href={mode === "login" ? "/register" : "/login"} className="font-bold">
+          <a href={mode === "login" ? "/register" : "/login"} className="font-bold transition duration-150 hover:text-blue-600">
             {mode === "login" ? "Register" : "Login"}
           </a>
         </p>
