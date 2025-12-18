@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
@@ -8,6 +8,8 @@ import { User } from "@supabase/supabase-js";
 function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -36,9 +38,30 @@ function Home() {
     return () => subscription.unsubscribe();
   }, [router]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.push("/login");
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
   };
 
   const getUserInitials = () => {
@@ -84,21 +107,34 @@ function Home() {
               </span>
               
               {/* Profile Picture or Initials */}
-              <div className="relative group">
-                {getProfileImage() ? (
-                  <img
-                    src={getProfileImage()!}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full object-cover cursor-pointer border-2 border-gray-300 hover:border-cyan-400 transition-colors"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-cyan-500 text-white flex items-center justify-center font-semibold cursor-pointer hover:bg-cyan-600 transition-colors">
-                    {getUserInitials()}
-                  </div>
-                )}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={toggleDropdown}
+                  className="focus:outline-none focus:ring-2 focus:ring-cyan-400 rounded-full"
+                  aria-label="User menu"
+                  aria-expanded={isDropdownOpen}
+                >
+                  {getProfileImage() ? (
+                    <img
+                      src={getProfileImage()!}
+                      alt="Profile"
+                      className="w-10 h-10 rounded-full object-cover cursor-pointer border-2 border-gray-300 hover:border-cyan-400 transition-colors"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-cyan-500 text-white flex items-center justify-center font-semibold cursor-pointer hover:bg-cyan-600 transition-colors">
+                      {getUserInitials()}
+                    </div>
+                  )}
+                </button>
                 
                 {/* Dropdown Menu */}
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block z-10">
+                <div 
+                  className={`absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 overflow-hidden transition-all duration-200 origin-top ${
+                    isDropdownOpen 
+                      ? 'opacity-100 scale-y-100 translate-y-0' 
+                      : 'opacity-0 scale-y-0 -translate-y-2 pointer-events-none'
+                  }`}
+                >
                   <button
                     onClick={handleSignOut}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
