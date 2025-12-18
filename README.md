@@ -2,6 +2,12 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+install the following packages
+```bash
+pnpm install @react-oauth/google@latest
+pnpm install @supabase/supabase-js
+```
+
 First, run the development server:
 
 ```bash
