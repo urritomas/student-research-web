@@ -116,6 +116,7 @@ function AuthForm({ mode }: { mode: Mode }) {
         </h1>
         
         {mode === "register" && (
+          // FULL NAME INPUT FIELD
           <div className="flex flex-wrap items-center">
             <input
               className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 mt-4 py-5 border-slate-300 border-2 rounded-lg transition duration-150 hover:border-slate-400"
@@ -125,10 +126,11 @@ function AuthForm({ mode }: { mode: Mode }) {
               onChange={(e) => setFullName(e.target.value)}
               required
             />
-            <FaUser className="absolute top-[99px] right-14 transition duration-150 hover:scale-110" />
+            <FaUser className="absolute top-[105px] right-14 transition duration-150 hover:scale-110" />
           </div>
         )}
 
+        {/* // EMAIL INPUT FIELD */}
         <div className="flex flex-wrap items-center">
           <input
             className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 mt-3 mb-3 py-5 border-slate-300  border-2 rounded-lg transition duration-150 hover:border-slate-400"
@@ -141,6 +143,7 @@ function AuthForm({ mode }: { mode: Mode }) {
           <FaUser className="absolute right-14 transition duration-150 hover:scale-110" />
         </div>
 
+        {/* // PASSWORD FIELD */}
         <div className="flex flex-wrap items-center">
           <input
             className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 py-5 border-slate-300 border-2 rounded-lg transition duration-150 hover:border-slate-400"
