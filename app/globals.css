@@ -2,32 +2,4 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-  }
-
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-  }
-}
-
-@layer utilities {
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400;
-  }
-  
-  .border-gradient {
-    border: 1px solid transparent;
-    background: linear-gradient(#000, #000) padding-box,
-                linear-gradient(90deg, rgba(59, 130, 246, 0.5), rgba(168, 85, 247, 0.5)) border-box;
-  }
-
-  .glow {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-  }
-}
-
 

@@ -37,7 +37,7 @@ function GoogleSignInButton() {
       <button
         onClick={handleGoogleSignIn}
         disabled={loading}
-        className="flex items-center justify-center gap-3 px-6 py-2.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-300 group"
+        className="flex items-center justify-center gap-3 px-6 py-2.5 bg-ivory border border-lightGray rounded-lg hover:bg-lightGray transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-darkSlateBlue group"
         aria-label="Sign in with Google"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -46,7 +46,7 @@ function GoogleSignInButton() {
           <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
           <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
         </svg>
-        <span className="group-hover:text-white transition-colors">Continue with Google</span>
+        <span className="group-hover:text-darkSlateBlue transition-colors">Continue with Google</span>
       </button>
     );
   }
@@ -105,69 +105,63 @@ function AuthForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-black p-4 relative overflow-hidden">
-      {/* Animated background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 animate-pulse" style={{ animationDuration: '8s' }}></div>
-      <div className="absolute inset-0" style={{
-        backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 50%)',
-      }}></div>
-      
-      <div className="w-full max-w-md relative z-10">
-        <form onSubmit={handleSubmit} className="bg-black/40 backdrop-blur-xl rounded-2xl shadow-2xl p-8 space-y-6 border border-white/10">
+    <div className="min-h-screen w-full flex items-center justify-center bg-ivory p-4">
+      <div className="w-full max-w-md">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl p-8 space-y-6 border border-lightGray">
           {/* Header */}
           <div className="text-center space-y-3">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-2">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-crimsonRed rounded-xl mb-2">
+              <svg className="w-6 h-6 text-ivory" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold text-gradient">
+            <h1 className="text-3xl font-bold text-darkSlateBlue">
               {mode === "login" ? "Welcome Back" : "Get Started"}
             </h1>
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-600 text-sm">
               {mode === "login" ? "Sign in to your account" : "Create your account to continue"}
             </p>
           </div>
         
           {mode === "register" && (
             <div className="relative group">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+              <label className="block text-sm font-medium text-darkSlateBlue mb-2">Full Name</label>
               <div className="relative">
                 <input
-                  className="w-full px-4 py-3 pl-11 bg-white/5 border border-white/10 rounded-lg outline-none transition-all duration-200 focus:border-blue-500/50 focus:bg-white/10 focus:ring-2 focus:ring-blue-500/20 hover:border-white/20 text-white placeholder:text-gray-500"
+                  className="w-full px-4 py-3 pl-11 bg-ivory border border-lightGray rounded-lg outline-none transition-all duration-200 focus:border-crimsonRed focus:ring-2 focus:ring-crimsonRed/20 hover:border-darkSlateBlue text-darkSlateBlue placeholder:text-gray-400"
                   type="text"
                   placeholder="John Doe"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
                 />
-                <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
+                <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-crimsonRed transition-colors" />
               </div>
             </div>
           )}
 
           <div className="relative group">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+            <label className="block text-sm font-medium text-darkSlateBlue mb-2">Email Address</label>
             <div className="relative">
               <input
-                className="w-full px-4 py-3 pl-11 bg-white/5 border border-white/10 rounded-lg outline-none transition-all duration-200 focus:border-blue-500/50 focus:bg-white/10 focus:ring-2 focus:ring-blue-500/20 hover:border-white/20 text-white placeholder:text-gray-500"
+                className="w-full px-4 py-3 pl-11 bg-ivory border border-lightGray rounded-lg outline-none transition-all duration-200 focus:border-crimsonRed focus:ring-2 focus:ring-crimsonRed/20 hover:border-darkSlateBlue text-darkSlateBlue placeholder:text-gray-400"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-crimsonRed transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
               </svg>
             </div>
           </div>
 
           <div className="relative group">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+            <label className="block text-sm font-medium text-darkSlateBlue mb-2">Password</label>
             <div className="relative">
               <input
-                className="w-full px-4 py-3 pl-11 bg-white/5 border border-white/10 rounded-lg outline-none transition-all duration-200 focus:border-blue-500/50 focus:bg-white/10 focus:ring-2 focus:ring-blue-500/20 hover:border-white/20 text-white placeholder:text-gray-500"
+                className="w-full px-4 py-3 pl-11 bg-ivory border border-lightGray rounded-lg outline-none transition-all duration-200 focus:border-crimsonRed focus:ring-2 focus:ring-crimsonRed/20 hover:border-darkSlateBlue text-darkSlateBlue placeholder:text-gray-400"
                 type="password"
                 placeholder="••••••••"
                 value={password}
@@ -175,7 +169,7 @@ function AuthForm({ mode }: { mode: Mode }) {
                 required
                 minLength={6}
               />
-              <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
+              <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-crimsonRed transition-colors" />
             </div>
           </div>
 
@@ -184,17 +178,17 @@ function AuthForm({ mode }: { mode: Mode }) {
               <label className="flex items-center cursor-pointer group">
                 <input 
                   id="rememberMe" 
-                  className="w-4 h-4 accent-blue-500 rounded cursor-pointer"
+                  className="w-4 h-4 accent-crimsonRed rounded cursor-pointer"
                   type="checkbox" 
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                 />
-                <span className="ml-2 text-gray-400 group-hover:text-gray-200 transition-colors">
+                <span className="ml-2 text-gray-600 group-hover:text-darkSlateBlue transition-colors">
                   Remember me
                 </span>
               </label>
 
-              <a href="#" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+              <a href="#" className="text-crimsonRed hover:text-darkSlateBlue font-medium transition-colors">
                 Forgot Password?
               </a>
             </div>
@@ -203,8 +197,8 @@ function AuthForm({ mode }: { mode: Mode }) {
           {message && (
             <div className={`p-3 rounded-lg text-sm text-center font-medium border ${
               message.includes("error") || message.includes("Failed") || message.includes("invalid") || message.includes("already") 
-                ? "bg-red-500/10 text-red-400 border-red-500/20" 
-                : "bg-green-500/10 text-green-400 border-green-500/20"
+                ? "bg-crimsonRed/10 text-crimsonRed border-crimsonRed/30" 
+                : "bg-mutedGreen/10 text-mutedGreen border-mutedGreen/30"
             }`}>
               {message}
             </div>
@@ -213,7 +207,7 @@ function AuthForm({ mode }: { mode: Mode }) {
           <button 
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-white/20 hover:shadow-white/30"
+            className="w-full py-3 bg-crimsonRed text-white font-semibold rounded-lg hover:bg-crimsonRed/90 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
             {loading ? (
               <span className="flex items-center justify-center">
@@ -228,10 +222,10 @@ function AuthForm({ mode }: { mode: Mode }) {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
+              <div className="w-full border-t border-lightGray"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-black text-gray-500">Or continue with</span>
+              <span className="px-4 bg-white text-gray-600">Or continue with</span>
             </div>
           </div>
 
@@ -239,9 +233,9 @@ function AuthForm({ mode }: { mode: Mode }) {
             <GoogleSignInButton />
           </div>
 
-          <p className="text-center text-sm text-gray-400">
+          <p className="text-center text-sm text-gray-600">
             {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-            <a href={mode === "login" ? "/register" : "/login"} className="font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+            <a href={mode === "login" ? "/register" : "/login"} className="font-semibold text-crimsonRed hover:text-darkSlateBlue transition-colors">
               {mode === "login" ? "Sign up" : "Sign in"}
             </a>
           </p>
