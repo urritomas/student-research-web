@@ -3,8 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabaseClient";
-import { FaUser } from "react-icons/fa";
-import { FaLock } from "react-icons/fa"; 
+import { FaUser, FaLock, FaGithub } from "react-icons/fa";
 import Button from "./Button"
 
 type Mode = "login" | "register";
@@ -18,7 +17,7 @@ function GoogleSignInButton() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/home`,
+            redirectTo: `${window.location.origin}/home-student`,
           },
         });
         
@@ -38,15 +37,16 @@ function GoogleSignInButton() {
       <button
         onClick={handleGoogleSignIn}
         disabled={loading}
-        className="flex items-center justify-center w-12 h-12 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition duration-100 hover:scale-110"
+        className="flex items-center justify-center gap-3 px-6 py-2.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-300 group"
         aria-label="Sign in with Google"
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
           <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
           <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
           <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
         </svg>
+        <span className="group-hover:text-white transition-colors">Continue with Google</span>
       </button>
     );
   }
@@ -73,7 +73,7 @@ function AuthForm({ mode }: { mode: Mode }) {
           password,
           options: { 
             data: { full_name: fullName },
-            emailRedirectTo: `${window.location.origin}/home`
+            emailRedirectTo: `${window.location.origin}/home-student`
           },
         });
         
@@ -85,7 +85,7 @@ function AuthForm({ mode }: { mode: Mode }) {
           setMessage("Registration successful! Please check your email to verify your account.");
         } else {
           setMessage("Registration successful!");
-          router.push("/home");
+          router.push("/home-student");
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -94,7 +94,7 @@ function AuthForm({ mode }: { mode: Mode }) {
         });
         if (error) throw error;
         setMessage("Signed in successfully");
-        router.push("/home");
+        router.push("/home-student");
       }
     } catch (err: any) {
       console.error("Auth error:", err);
@@ -105,104 +105,148 @@ function AuthForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] md:scale-110 ">
-      {/* <Button children='hello' color='primaryTxt' size='sm'/>
-      <Button children='hello' color='success' size='md'/>
-      <Button children='hello' color='alert' size='lg'/>
-      <Button children='hello' color='accent' size='xl'/> */}
-      <form onSubmit={handleSubmit} className="flex flex-col justify-center bg-lightGray rounded-lg border-darkSlateBlue border-2 shadow-xl p-6 m-3">
-        <h1 className="text-2xl text-center text-darkSlateBlue font-bold mb-1">
-          {mode === "login" ? "Login" : "Register"}
-        </h1>
-        
-        {mode === "register" && (
-          // FULL NAME INPUT FIELD
-          <div className="flex flex-wrap items-center">
-            <input
-              className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 mt-4 py-5 border-slate-300 border-2 rounded-lg transition duration-150 hover:border-slate-400"
-              type="text"
-              placeholder="Full Name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-            />
-            <FaUser className="absolute top-[105px] right-14 transition duration-150 hover:scale-110" />
-          </div>
-        )}
-
-        {/* // EMAIL INPUT FIELD */}
-        <div className="flex flex-wrap items-center">
-          <input
-            className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 mt-3 mb-3 py-5 border-slate-300  border-2 rounded-lg transition duration-150 hover:border-slate-400"
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <FaUser className="absolute right-14 transition duration-150 hover:scale-110" />
-        </div>
-
-        {/* // PASSWORD FIELD */}
-        <div className="flex flex-wrap items-center">
-          <input
-            className="text-darkSlateBlue w-full h-8 outline-none pl-3 pr-10 py-5 border-slate-300 border-2 rounded-lg transition duration-150 hover:border-slate-400"
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-          />
-          <FaLock className="absolute right-14 transition duration-150 hover:scale-110" />
-        </div>
-
-        {mode === "login" && (
-          <div className="flex justify-between items-center mt-4 mb-1">
-            <div className="flex items-center transition duration-150">
-              <input 
-                id="rememberMe" 
-                className="accent-darkSlateBlue scale-110transition duration-150"
-                type="checkbox" 
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              <label className="text-darkSlateBlue ml-2 text-sm transition duration-150 hover:text-blue-600" htmlFor="rememberMe">
-                Remember me
-              </label>
+    <div className="min-h-screen w-full flex items-center justify-center bg-black p-4 relative overflow-hidden">
+      {/* Animated background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 animate-pulse" style={{ animationDuration: '8s' }}></div>
+      <div className="absolute inset-0" style={{
+        backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 50%)',
+      }}></div>
+      
+      <div className="w-full max-w-md relative z-10">
+        <form onSubmit={handleSubmit} className="bg-black/40 backdrop-blur-xl rounded-2xl shadow-2xl p-8 space-y-6 border border-white/10">
+          {/* Header */}
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-2">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
             </div>
+            <h1 className="text-3xl font-bold text-gradient">
+              {mode === "login" ? "Welcome Back" : "Get Started"}
+            </h1>
+            <p className="text-gray-400 text-sm">
+              {mode === "login" ? "Sign in to your account" : "Create your account to continue"}
+            </p>
+          </div>
+        
+          {mode === "register" && (
+            <div className="relative group">
+              <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+              <div className="relative">
+                <input
+                  className="w-full px-4 py-3 pl-11 bg-white/5 border border-white/10 rounded-lg outline-none transition-all duration-200 focus:border-blue-500/50 focus:bg-white/10 focus:ring-2 focus:ring-blue-500/20 hover:border-white/20 text-white placeholder:text-gray-500"
+                  type="text"
+                  placeholder="John Doe"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+                <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
+              </div>
+            </div>
+          )}
 
-            <a href="#" className="text-darkSlateBlue ml-2 text-sm transition duration-150 hover:text-blue-600">
-              Forgot Password?
+          <div className="relative group">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+            <div className="relative">
+              <input
+                className="w-full px-4 py-3 pl-11 bg-white/5 border border-white/10 rounded-lg outline-none transition-all duration-200 focus:border-blue-500/50 focus:bg-white/10 focus:ring-2 focus:ring-blue-500/20 hover:border-white/20 text-white placeholder:text-gray-500"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+              </svg>
+            </div>
+          </div>
+
+          <div className="relative group">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+            <div className="relative">
+              <input
+                className="w-full px-4 py-3 pl-11 bg-white/5 border border-white/10 rounded-lg outline-none transition-all duration-200 focus:border-blue-500/50 focus:bg-white/10 focus:ring-2 focus:ring-blue-500/20 hover:border-white/20 text-white placeholder:text-gray-500"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+              <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
+            </div>
+          </div>
+
+          {mode === "login" && (
+            <div className="flex justify-between items-center text-sm">
+              <label className="flex items-center cursor-pointer group">
+                <input 
+                  id="rememberMe" 
+                  className="w-4 h-4 accent-blue-500 rounded cursor-pointer"
+                  type="checkbox" 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <span className="ml-2 text-gray-400 group-hover:text-gray-200 transition-colors">
+                  Remember me
+                </span>
+              </label>
+
+              <a href="#" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                Forgot Password?
+              </a>
+            </div>
+          )}
+
+          {message && (
+            <div className={`p-3 rounded-lg text-sm text-center font-medium border ${
+              message.includes("error") || message.includes("Failed") || message.includes("invalid") || message.includes("already") 
+                ? "bg-red-500/10 text-red-400 border-red-500/20" 
+                : "bg-green-500/10 text-green-400 border-green-500/20"
+            }`}>
+              {message}
+            </div>
+          )}
+
+          <button 
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-white/20 hover:shadow-white/30"
+          >
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading...
+              </span>
+            ) : mode === "login" ? "Sign In" : "Create Account"}
+          </button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/10"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-black text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleSignInButton />
+          </div>
+
+          <p className="text-center text-sm text-gray-400">
+            {mode === "login" ? "Don't have an account? " : "Already have an account? "}
+            <a href={mode === "login" ? "/register" : "/login"} className="font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+              {mode === "login" ? "Sign up" : "Sign in"}
             </a>
-          </div>
-        )}
-
-        {message && (
-          <div className={`text-darkSlateBlue text-sm text-center my-2 ${message.includes("error") || message.includes("Failed") || message.includes("invalid") || message.includes("already") ? "text-red-600" : "text-green-600"}`}>
-            {message}
-          </div>
-        )}
-
-        <button 
-          type="submit"
-          disabled={loading}
-          className="text-darkSlateBlue bg-skyBlue rounded-lg mt-4 mb-1 w-4/5 p-2 self-center cursor-pointer hover:bg-blue-400 hover:text-white hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed duration-150"
-        >
-          {loading ? "Loading..." : mode === "login" ? "Login" : "Register"}
-        </button>
-
-        <div className="flex justify-center mt-3 mb-3">
-          <GoogleSignInButton />
-        </div>
-
-        <p className="text-darkSlateBlue text-center text-sm">
-          {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-          <a href={mode === "login" ? "/register" : "/login"} className="font-bold transition duration-150 hover:text-blue-600">
-            {mode === "login" ? "Register" : "Login"}
-          </a>
-        </p>
-      </form>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }
