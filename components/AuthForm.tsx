@@ -17,7 +17,7 @@ function GoogleSignInButton() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/home-student`,
+            redirectTo: `${window.location.origin}/auth/callback`,
           },
         });
         
@@ -73,7 +73,7 @@ function AuthForm({ mode }: { mode: Mode }) {
           password,
           options: { 
             data: { full_name: fullName },
-            emailRedirectTo: `${window.location.origin}/home-student`
+            emailRedirectTo: `${window.location.origin}/auth/callback`
           },
         });
         
@@ -85,7 +85,8 @@ function AuthForm({ mode }: { mode: Mode }) {
           setMessage("Registration successful! Please check your email to verify your account.");
         } else {
           setMessage("Registration successful!");
-          router.push("/home-student");
+          // Use window.location instead of router.push to ensure cookies are synced
+          window.location.href = "/onboarding";
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -94,7 +95,8 @@ function AuthForm({ mode }: { mode: Mode }) {
         });
         if (error) throw error;
         setMessage("Signed in successfully");
-        router.push("/home-student");
+        // Use window.location instead of router.push to ensure cookies are synced
+        window.location.href = "/onboarding";
       }
     } catch (err: any) {
       console.error("Auth error:", err);

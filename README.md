@@ -1,42 +1,246 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Student Research Monitoring and Collaboration Portal
 
-## Getting Started
+A comprehensive web-based platform for managing academic research projects from proposal to publication, initially targeting Mapúa Malayan Colleges with plans to expand to other institutions.
 
-install the following packages
-```bash
-pnpm install @react-oauth/google@latest
-pnpm install @supabase/supabase-js
-```
+## 🎯 Features
 
-First, run the development server:
+### Core Functionality
+- **User Authentication** - Google OAuth + Email authentication via Supabase
+- **Project Management** - Create, track, and manage research projects
+- **Collaboration** - Invite collaborators, advisers, and panel members
+- **Document Management** - Upload and version control (GitHub-style)
+- **Defense Scheduling** - Coordinate and schedule defense events
+- **Evaluation System** - Rubric-based grading during defenses
+- **Role-Based Dashboards** - Student, Adviser, and Coordinator views
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
+### Tech Stack
+- **Framework**: Next.js 16 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS with custom design system
+- **Authentication**: Supabase Auth
+- **Database**: Supabase (PostgreSQL)
+- **Icons**: React Icons
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+ 
+- pnpm (recommended) or npm
+
+### Installation
+
+1. Clone the repository
+\`\`\`bash
+git clone <repository-url>
+cd student-research-web
+\`\`\`
+
+2. Install dependencies
+\`\`\`bash
+pnpm install
+\`\`\`
+
+3. Set up environment variables
+Create a \`.env.local\` file in the root directory:
+\`\`\`env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+\`\`\`
+
+4. Run the development server
+\`\`\`bash
 pnpm dev
-# or
-bun dev
-```
+\`\`\`
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+\`\`\`
+student-research-web/
+├── app/
+│   ├── (auth)/              # Authentication routes (login, register)
+│   ├── (dashboard)/         # Protected dashboard routes
+│   │   ├── student/         # Student-specific pages
+│   │   ├── adviser/         # Adviser-specific pages
+│   │   └── coordinator/     # Coordinator-specific pages
+│   ├── dev/                 # Development tools (component showcase)
+│   ├── globals.css          # Global styles
+│   ├── layout.tsx           # Root layout
+│   └── page.tsx             # Landing page
+├── components/
+│   ├── ui/                  # Reusable UI components
+│   │   ├── Avatar.tsx
+│   │   ├── Badge.tsx
+│   │   ├── Button.tsx
+│   │   ├── Card.tsx
+│   │   ├── Dropdown.tsx
+│   │   ├── Input.tsx
+│   │   ├── Modal.tsx
+│   │   ├── Select.tsx
+│   │   ├── Table.tsx
+│   │   ├── Tabs.tsx
+│   │   ├── Tag.tsx
+│   │   └── Toast.tsx
+│   └── layout/              # Layout components
+│       ├── DashboardLayout.tsx
+│       ├── EmptyState.tsx
+│       ├── Footer.tsx
+│       ├── Header.tsx
+│       └── Sidebar.tsx
+├── lib/
+│   └── supabaseClient.tsx   # Supabase configuration
+├── middleware.ts            # Route protection middleware
+├── tailwind.config.js       # Tailwind CSS configuration
+├── DESIGN.md               # Design system documentation
+└── README.md
+\`\`\`
 
-## Learn More
+## 🎨 Design System
 
-To learn more about Next.js, take a look at the following resources:
+The project uses a custom design system built with Tailwind CSS. See [DESIGN.md](./DESIGN.md) for detailed documentation.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Key Design Tokens
+- **Colors**: Primary (Dark Slate Blue), Accent (Sky Blue), Success (Muted Green), Error (Crimson Red)
+- **Typography**: Inter (sans), Georgia (serif), Fira Code (mono)
+- **Components**: 11 core UI components + 5 layout components
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Component Showcase
+Visit `/dev/components` in development mode to see all available components with interactive examples.
 
-## Deploy on Vercel
+## 🔐 Authentication & Authorization
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Routes
+- **Public**: `/`, `/login`, `/register`
+- **Protected**: All `/dashboard/*` routes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Roles
+1. **Student** - Create projects, collaborate, view defenses
+2. **Adviser** - Manage advisees, review projects, schedule defenses
+3. **Coordinator** - System-wide management, rubrics, user administration
+
+### Middleware
+Route protection is handled by Next.js middleware that checks Supabase authentication tokens.
+
+## 📱 Dashboard Features
+
+### Student Dashboard
+- My Projects overview
+- Create new projects
+- Manage invitations
+- View upcoming defenses
+- Profile management
+
+### Adviser Dashboard
+- Advisee management
+- Projects overview
+- Defense scheduling
+- Document reviews
+
+### Coordinator Dashboard
+- System-wide statistics
+- All projects view
+- Defense management
+- Rubric configuration
+- User administration
+
+## 🧩 Component Usage
+
+### Example: Creating a Form
+\`\`\`tsx
+import { Input, Select, Button } from '@/components/ui';
+
+<form>
+  <Input 
+    label="Project Title" 
+    placeholder="Enter title"
+    required 
+  />
+  <Select
+    label="Status"
+    options={[
+      { value: 'draft', label: 'Draft' },
+      { value: 'review', label: 'In Review' }
+    ]}
+  />
+  <Button variant="primary" type="submit">
+    Submit
+  </Button>
+</form>
+\`\`\`
+
+### Example: Using Dashboard Layout
+\`\`\`tsx
+import DashboardLayout from '@/components/layout/DashboardLayout';
+
+export default function MyPage() {
+  return (
+    <DashboardLayout role="student" user={userData} onLogout={handleLogout}>
+      {/* Your content */}
+    </DashboardLayout>
+  );
+}
+\`\`\`
+
+## 🛠️ Development
+
+### Available Scripts
+- \`pnpm dev\` - Start development server
+- \`pnpm build\` - Build for production
+- \`pnpm start\` - Start production server
+- \`pnpm lint\` - Run ESLint
+
+### Code Style
+- TypeScript for type safety
+- Client components use \`'use client'\` directive
+- Tailwind CSS for styling (avoid inline styles)
+- Components follow atomic design principles
+
+## 📋 Roadmap
+
+### Phase 1: Core UI Foundation ✅
+- [x] Design system configuration
+- [x] Component library (11 UI + 5 Layout components)
+- [x] Route structure with (auth) and (dashboard) groups
+- [x] Role-based navigation
+- [x] Authentication middleware
+
+### Phase 2: Backend Integration (Next)
+- [ ] Supabase database schema
+- [ ] User role management
+- [ ] Project CRUD operations
+- [ ] Invitation system
+- [ ] Document upload/storage
+
+### Phase 3: Collaboration Features
+- [ ] Real-time comments
+- [ ] Document version control
+- [ ] Notification system
+- [ ] Activity feeds
+
+### Phase 4: Defense Management
+- [ ] Schedule creation
+- [ ] Rubric builder
+- [ ] Panel evaluation interface
+- [ ] Results dashboard
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (\`git checkout -b feature/AmazingFeature\`)
+3. Commit your changes (\`git commit -m 'Add some AmazingFeature'\`)
+4. Push to the branch (\`git push origin feature/AmazingFeature\`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 👥 Team
+
+Developed for Mapúa Malayan Colleges
+
+## 📞 Support
+
+For issues and questions, please create an issue in the GitHub repository.
+
