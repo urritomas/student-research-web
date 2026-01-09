@@ -5,7 +5,8 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import Button from '@/components/Button';
 import Input from '@/components/ui/Input';
-import { FiUpload, FiLink, FiX } from 'react-icons/fi';
+import Select from '@/components/ui/Select';
+import { FiUpload, FiX } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -16,8 +17,6 @@ interface UserProfile {
   avatar?: string;
 }
 
-type AttachmentType = 'none' | 'file' | 'url';
-
 export default function CreateProjectPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -27,16 +26,16 @@ export default function CreateProjectPage() {
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [attachmentType, setAttachmentType] = useState<AttachmentType>('none');
+  const [researchType, setResearchType] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentUrl, setDocumentUrl] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
   
   // Error state
   const [errors, setErrors] = useState<{
     title?: string;
     description?: string;
+    researchType?: string;
     file?: string;
-    url?: string;
     general?: string;
   }>({});
 
@@ -90,10 +89,7 @@ export default function CreateProjectPage() {
     router.push('/login');
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const validateFile = (file: File): string | null => {
     // Validate file type
     const allowedTypes = [
       'application/pdf',
@@ -102,32 +98,65 @@ export default function CreateProjectPage() {
     ];
     
     if (!allowedTypes.includes(file.type)) {
-      setErrors({ ...errors, file: 'Only PDF, DOC, and DOCX files are allowed' });
-      return;
+      return 'Only PDF, DOC, and DOCX files are allowed';
     }
 
     // Validate file size (10MB limit)
     const maxSize = 10 * 1024 * 1024; // 10MB in bytes
     if (file.size > maxSize) {
-      setErrors({ ...errors, file: 'File size must be less than 10MB' });
+      return 'File size must be less than 10MB';
+    }
+
+    return null;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const error = validateFile(file);
+    if (error) {
+      setErrors({ ...errors, file: error });
       return;
     }
 
     setSelectedFile(file);
-    setAttachmentType('file');
-    setDocumentUrl('');
     setErrors({ ...errors, file: undefined });
   };
 
-  const handleUrlChange = (value: string) => {
-    setDocumentUrl(value);
-    if (value) {
-      setAttachmentType('url');
-      setSelectedFile(null);
-    } else {
-      setAttachmentType('none');
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    const error = validateFile(file);
+    if (error) {
+      setErrors({ ...errors, file: error });
+      return;
     }
-    setErrors({ ...errors, url: undefined });
+
+    setSelectedFile(file);
+    setErrors({ ...errors, file: undefined });
   };
 
   const validateForm = (): boolean => {
@@ -141,12 +170,8 @@ export default function CreateProjectPage() {
       newErrors.description = 'Project description is required';
     }
 
-    if (attachmentType === 'url' && documentUrl) {
-      try {
-        new URL(documentUrl);
-      } catch {
-        newErrors.url = 'Please enter a valid URL';
-      }
+    if (!researchType) {
+      newErrors.researchType = 'Research type is required';
     }
 
     setErrors(newErrors);
@@ -167,11 +192,10 @@ export default function CreateProjectPage() {
       const formData = new FormData();
       formData.append('title', title);
       formData.append('description', description);
+      formData.append('researchType', researchType);
       
-      if (attachmentType === 'file' && selectedFile) {
+      if (selectedFile) {
         formData.append('file', selectedFile);
-      } else if (attachmentType === 'url' && documentUrl) {
-        formData.append('documentUrl', documentUrl);
       }
 
       const response = await fetch('/api/projects/create', {
@@ -185,8 +209,8 @@ export default function CreateProjectPage() {
         throw new Error(data.error || 'Failed to create project');
       }
 
-      // Redirect to the project detail page
-      router.push(`/student/projects/${data.projectId}`);
+      // Redirect to the projects list page
+      router.push('/student/projects');
     } catch (error: any) {
       console.error('Error creating project:', error);
       setErrors({ general: error.message || 'Failed to create project. Please try again.' });
@@ -197,9 +221,7 @@ export default function CreateProjectPage() {
 
   const clearAttachment = () => {
     setSelectedFile(null);
-    setDocumentUrl('');
-    setAttachmentType('none');
-    setErrors({ ...errors, file: undefined, url: undefined });
+    setErrors({ ...errors, file: undefined });
   };
 
   if (isLoading) {
@@ -268,51 +290,73 @@ export default function CreateProjectPage() {
               )}
             </div>
 
+            {/* Paper Standard */}
+            <Select
+              label="Paper Standard"
+              placeholder="Select paper standard"
+              value={researchType}
+              onChange={(e) => setResearchType(e.target.value)}
+              options={[
+                { value: 'IMRAD', label: 'IMRAD' },
+                { value: 'IAAA', label: 'IAAA' },
+                { value: 'custom', label: 'Custom' },
+              ]}
+              error={errors.researchType}
+              required
+            />
+
             {/* Document Attachment Section */}
             <div className="space-y-4">
               <label className="block text-sm font-medium text-neutral-700">
                 Document Attachment (Optional)
               </label>
               
-              {/* Attachment Type Selection */}
-              {attachmentType === 'none' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* File Upload Option */}
-                  <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 hover:border-primary-500 transition-colors">
-                    <label className="cursor-pointer flex flex-col items-center space-y-2">
-                      <FiUpload className="text-3xl text-neutral-400" />
-                      <span className="text-sm font-medium text-neutral-700">Upload File</span>
-                      <span className="text-xs text-neutral-500">PDF, DOC, DOCX (Max 10MB)</span>
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept=".pdf,.doc,.docx"
-                        onChange={handleFileChange}
-                      />
-                    </label>
-                  </div>
-
-                  {/* URL Option */}
-                  <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 hover:border-primary-500 transition-colors">
-                    <button
-                      type="button"
-                      onClick={() => setAttachmentType('url')}
-                      className="w-full flex flex-col items-center space-y-2"
-                    >
-                      <FiLink className="text-3xl text-neutral-400" />
-                      <span className="text-sm font-medium text-neutral-700">External Link</span>
-                      <span className="text-xs text-neutral-500">Link to external document</span>
-                    </button>
-                  </div>
+              {/* File Upload Area with Drag and Drop */}
+              {!selectedFile && (
+                <div
+                  onDragEnter={handleDragEnter}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-lg p-8 transition-all ${
+                    isDragging
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-neutral-300 hover:border-primary-500 hover:bg-neutral-50'
+                  }`}
+                >
+                  <label className="cursor-pointer flex flex-col items-center space-y-3">
+                    <div className={`p-4 rounded-full transition-colors ${
+                      isDragging ? 'bg-primary-100' : 'bg-neutral-100'
+                    }`}>
+                      <FiUpload className={`text-3xl transition-colors ${
+                        isDragging ? 'text-primary-600' : 'text-neutral-400'
+                      }`} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-neutral-700">
+                        {isDragging ? 'Drop file here' : 'Drag and drop your file here'}
+                      </p>
+                      <p className="text-xs text-neutral-500 mt-1">or click to browse</p>
+                      <p className="text-xs text-neutral-500 mt-2">PDF, DOC, DOCX (Max 10MB)</p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleFileChange}
+                    />
+                  </label>
                 </div>
               )}
 
               {/* File Selected */}
-              {attachmentType === 'file' && selectedFile && (
+              {selectedFile && (
                 <div className="border border-neutral-300 rounded-lg p-4 bg-neutral-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <FiUpload className="text-primary-500" />
+                      <div className="p-2 bg-primary-100 rounded">
+                        <FiUpload className="text-primary-500" />
+                      </div>
                       <div>
                         <p className="text-sm font-medium text-neutral-700">{selectedFile.name}</p>
                         <p className="text-xs text-neutral-500">
@@ -324,27 +368,6 @@ export default function CreateProjectPage() {
                       type="button"
                       onClick={clearAttachment}
                       className="text-neutral-500 hover:text-error-600 transition-colors"
-                    >
-                      <FiX className="text-xl" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* URL Input */}
-              {attachmentType === 'url' && (
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      placeholder="https://example.com/document.pdf"
-                      value={documentUrl}
-                      onChange={(e) => handleUrlChange(e.target.value)}
-                      error={errors.url}
-                    />
-                    <button
-                      type="button"
-                      onClick={clearAttachment}
-                      className="text-neutral-500 hover:text-error-600 transition-colors p-2"
                     >
                       <FiX className="text-xl" />
                     </button>

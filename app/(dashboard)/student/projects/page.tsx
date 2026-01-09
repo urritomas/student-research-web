@@ -77,27 +77,40 @@ export default function StudentProjectsPage() {
     router.push('/login');
   };
 
-  // Mock projects data - replace with actual data from database
-  const projects = [
-    {
-      id: 1,
-      title: 'AI-Powered Academic Writing Assistant',
-      status: 'In Progress',
-      adviser: 'Dr. Jane Smith',
-      lastUpdated: '2 hours ago',
-      members: 3,
-    },
-    {
-      id: 2,
-      title: 'Blockchain-based Student Records System',
-      status: 'Approved',
-      adviser: 'Prof. Robert Johnson',
-      lastUpdated: '1 day ago',
-      members: 4,
-    },
-  ];
+  // Fetch projects from database
+  const [projects, setProjects] = useState<any[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (user) {
+      fetchProjects();
+    }
+  }, [user]);
+
+  const fetchProjects = async () => {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
+
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('created_by', authUser.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching projects:', error);
+      } else {
+        setProjects(data || []);
+      }
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
+  if (isLoading || projectsLoading) {
     return (
       <DashboardLayout role="student" user={{ name: 'Loading...', email: '', role: 'Student' }} onLogout={handleLogout}>
         <div className="flex items-center justify-center h-64">
@@ -148,13 +161,16 @@ export default function StudentProjectsPage() {
                   </div>
                 </CardHeader>
                 <CardTitle>{project.title}</CardTitle>
-                <CardDescription>Adviser: {project.adviser}</CardDescription>
-                <div className="mt-4 flex items-center justify-between text-sm text-neutral-600">
+                <CardDescription>
+                  {project.description || 'No description'}
+                </CardDescription>
+                <div className="mt-4 space-y-2 text-sm text-neutral-600">
+                  <div>Type: {project.project_type}</div>
+                  <div>Standard: {project.paper_standard}</div>
                   <div className="flex items-center gap-1">
                     <FiClock className="text-neutral-500" />
-                    {project.lastUpdated}
+                    {new Date(project.created_at).toLocaleDateString()}
                   </div>
-                  <div>{project.members} members</div>
                 </div>
               </Card>
             ))}

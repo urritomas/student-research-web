@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const title = formData.get('title')?.toString();
     const description = formData.get('description')?.toString();
-    const documentUrl = formData.get('documentUrl')?.toString();
+    const researchType = formData.get('researchType')?.toString();
     const file = formData.get('file') as File | null;
 
     // Validate required fields
@@ -61,24 +61,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate that only one attachment method is provided
-    if (file && documentUrl) {
+    // Validate paper standard
+    if (!researchType || !['IMRAD', 'IAAA', 'custom'].includes(researchType)) {
       return NextResponse.json(
-        { error: 'Only one attachment method allowed (file OR URL)' },
+        { error: 'Valid paper standard is required (IMRAD, IAAA, or custom)' },
         { status: 400 }
       );
-    }
-
-    // Validate URL if provided
-    if (documentUrl) {
-      try {
-        new URL(documentUrl);
-      } catch {
-        return NextResponse.json(
-          { error: 'Invalid URL format' },
-          { status: 400 }
-        );
-      }
     }
 
     // Validate file if provided
@@ -113,58 +101,14 @@ export async function POST(request: Request) {
       project_code: projectCode,
       title: title.trim(),
       description: description.trim(),
-      project_type: 'research',
-      status: 'proposal',
+      project_type: 'independent',
+      status: 'draft',
+      paper_standard: researchType,
       created_by: user.id,
       keywords: [],
-      paper_standard: null,
     };
 
-    // Handle document attachment
-    let documentPath: string | null = null;
-    
-    if (file) {
-      // Upload file to Supabase Storage using the server client so
-      // RLS/storage policies see the authenticated user
-      const fileExtension = file.name.split('.').pop();
-      const timestamp = Date.now();
-      const fileName = `${timestamp}_${file.name}`;
-      const filePath = `${user.id}/${fileName}`;
-
-      // Convert file to ArrayBuffer then to Uint8Array for upload
-      const arrayBuffer = await file.arrayBuffer();
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('project_documents')
-        .upload(filePath, arrayBuffer, {
-          contentType: file.type,
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error('File upload error:', uploadError);
-        return NextResponse.json(
-          { error: `Failed to upload document: ${uploadError.message}` },
-          { status: 500 }
-        );
-      }
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('project_documents')
-        .getPublicUrl(filePath);
-
-      documentPath = urlData.publicUrl;
-    } else if (documentUrl) {
-      documentPath = documentUrl;
-    }
-
-    // Add document reference to project metadata
-    if (documentPath) {
-      projectData.document_reference = documentPath;
-    }
-
-    // Insert project into database
+    // Insert project into database first to get project ID
     const { data: project, error: projectError } = await supabase
       .from('projects')
       .insert(projectData)
@@ -177,6 +121,74 @@ export async function POST(request: Request) {
         { error: 'Failed to create project' },
         { status: 500 }
       );
+    }
+
+    // Handle document upload if file is provided
+    if (file) {
+      try {
+        // Upload file to Supabase Storage using recommended path structure
+        // Path: projects/{projectId}/{filename}
+        const fileExtension = file.name.split('.').pop();
+        const timestamp = Date.now();
+        const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const fileName = `${timestamp}_${sanitizedFileName}`;
+        const filePath = `projects/${project.id}/${fileName}`;
+
+        // Convert file to ArrayBuffer for upload
+        const arrayBuffer = await file.arrayBuffer();
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('project_documents')
+          .upload(filePath, arrayBuffer, {
+            contentType: file.type,
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error('File upload error:', uploadError);
+          // Document upload failed, but project was created
+          // Update project with error note or delete project?
+          // For now, we'll continue and return a warning
+          return NextResponse.json(
+            { 
+              success: true,
+              projectId: project.id,
+              projectCode: project.project_code,
+              warning: `Project created but document upload failed: ${uploadError.message}`
+            },
+            { status: 201 }
+          );
+        }
+
+        // Get public URL for the uploaded document
+        const { data: urlData } = supabase.storage
+          .from('project_documents')
+          .getPublicUrl(filePath);
+
+        // Update project with document reference
+        const { error: updateError } = await supabase
+          .from('projects')
+          .update({ document_reference: urlData.publicUrl })
+          .eq('id', project.id);
+
+        if (updateError) {
+          console.error('Error updating project with document reference:', updateError);
+          // Document uploaded but reference not saved - continue anyway
+        }
+      } catch (uploadErr: any) {
+        console.error('Unexpected error during file upload:', uploadErr);
+        // Project created, file upload failed
+        return NextResponse.json(
+          { 
+            success: true,
+            projectId: project.id,
+            projectCode: project.project_code,
+            warning: 'Project created but document upload encountered an error'
+          },
+          { status: 201 }
+        );
+      }
     }
 
     // Add creator to project_members table as leader
