@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import Button from '@/components/Button';
-import JoinClassCard from '@/components/ui/JoinClassCard';
+import JoinGroupCard from '@/components/ui/JoinGroupCard';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -131,8 +131,8 @@ export default function StudentDashboardPage() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Join a Class Section */}
-          <JoinClassCard />
+          {/* Join a Group Section */}
+          <JoinGroupCard />
 
           {/* Pending Invitations Section */}
           <Card>
