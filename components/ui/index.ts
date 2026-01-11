@@ -31,3 +31,5 @@ export type { TagProps } from './Tag';
 
 export { Toast, ToastContainer, useToast } from './Toast';
 export type { ToastProps, ToastType } from './Toast';
+
+export { default as JoinGroupCard } from './JoinGroupCard';
