@@ -4,6 +4,9 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import Avatar from '@/components/ui/Avatar';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/Button';
+import EditProfile from './editProfile';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -18,6 +21,7 @@ export default function StudentProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   useEffect(() => {
     fetchUserProfile();
@@ -89,7 +93,9 @@ export default function StudentProfilePage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-primary-700">Profile</h1>
-          <p className="text-neutral-600 mt-1">Manage your account information</p>
+          <div className="flex items-center gap-4 mt-2">
+            <p className="text-neutral-600">Manage your account information</p>
+          </div>
         </div>
 
         <Card>
@@ -105,8 +111,22 @@ export default function StudentProfilePage() {
               <p className="text-sm text-neutral-500 mt-1">{user.role}</p>
             </div>
           </div>
+          <div className="mt-6">
+            <Button size="sm" variant="error" onClick={() => setIsEditOpen(true)}>
+              Edit Profile
+            </Button>
+          </div>
         </Card>
       </div>
+
+      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit Profile" size="md">
+        {user && (
+          <EditProfile
+            user={user}
+            onClose={() => setIsEditOpen(false)}
+          />
+        )}
+      </Modal>
     </DashboardLayout>
   );
 }
