@@ -107,7 +107,7 @@ function AuthForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-ivory p-4">
+    <div className="min-h-screen w-full flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl p-8 space-y-6 border border-lightGray">
           {/* Header */}
