@@ -1,13 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import Card from '@/components/ui/Card';
-import Avatar from '@/components/ui/Avatar';
-import Modal from '@/components/ui/Modal';
+import { Card, Avatar, Modal } from '@/components/ui';
 import Button from '@/components/Button';
 import EditProfile from './editProfile';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
 interface UserProfile {

@@ -1,14 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
-import Button from '@/components/Button';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import { FiUpload, FiX } from 'react-icons/fi';
-import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa'
 import { useRouter } from 'next/navigation';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { Card, Input, Select } from '@/components/ui';
+import Button from '@/components/Button';
+import { FiUpload, FiX } from 'react-icons/fi';
+import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 import { supabase } from '@/lib/supabaseClient';
 
 interface UserProfile {
