@@ -39,8 +39,7 @@ export default function EditProfile({ user, onClose }: EditProfileProps) {
           </label>
           <Input
             type="text"
-            placeholder=""
-            value={user.name}
+            placeholder={user.name}
           />
         </div>
 
