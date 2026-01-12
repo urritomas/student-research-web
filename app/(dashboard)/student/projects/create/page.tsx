@@ -18,6 +18,7 @@ interface UserProfile {
   avatar?: string;
 }
 
+
 export default function CreateProjectPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -29,22 +30,15 @@ export default function CreateProjectPage() {
   const [abstract, setAbstract] = useState('');
   const [keywords, setKeywords] = useState('');
   const [contributorRole, setContributorRole] = useState('');
-  const [contributors, setContributors] = useState([]);
-  const [contributorFirstName, setContributorFirstName] = useState('');
-  const [contributorMiddleName, setContributorMiddleName] = useState('');
-  const [contributorLastName, setContributorLastName] = useState('');
-  const [contributorSuffix, setContributorSuffix] = useState('');
   const [courseType, setCourseType] = useState('');
   const [adviserRole, setAdviserRole] = useState('');
-  const [advisers, setAdvisers] = useState([]);
-  const [adviserFirstName, setAdviserFirstName] = useState('');
-  const [adviserMiddleName, setAdviserMiddleName] = useState('');
-  const [adviserLastName, setAdviserLastName] = useState('');
-  const [adviserSuffix, setAdviserSuffix] = useState('');  
   const [researchType, setResearchType] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  
+
+  const [contributors, setContributors] = useState<string[]>([]);
+  const [advisers, setAdvisers] = useState<string[]>(['rico', 'joshua']);
+
   // Error state
   const [errors, setErrors] = useState<{
     title?: string;
@@ -98,6 +92,13 @@ export default function CreateProjectPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user && !contributors.includes(user.name)) {
+      setContributors([user.name, ...contributors])
+    }
+  }, [user])
+  
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -173,6 +174,20 @@ export default function CreateProjectPage() {
     setSelectedFile(file);
     setErrors({ ...errors, file: undefined });
   };
+
+  const removeContributor = (index) => {
+    const updatedContributorList = contributors.filter((_, i) => i !== index)
+    if (contributors.length > 1) {
+      setContributors(updatedContributorList)
+    } 
+  }
+
+  const removeAdviser = (index) => {
+    const updatedAdviserList = advisers.filter((_, i) => i !== index)
+    if (advisers.length > 1) {
+      setAdvisers(updatedAdviserList)
+    }
+  }
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
@@ -331,68 +346,34 @@ export default function CreateProjectPage() {
                 Contributors and Roles <span className="text-error-500">*</span>
               </label>
               <ol>
-                <li className="flex gap-4">
-                  <div className="w-40">
-                    <Select 
-                      label=""
-                      placeholder="Select Role"
-                      value={contributorRole}
-                      onChange={(e) => setContributorRole(e.target.value)}
-                      options={[
-                        { value: 'Author', label: 'Author'},
-                        { value: 'Editor', label: 'Editor'},
-                        { value: 'Compiler', label: 'Compiler'},
-                        { value: 'Translator', label: 'Translator'}
-                      ]}
-                    />
+                {contributors.map((contributor, index) => (
+                  <li key={index} className="flex justify-between mb-2">
+                  <div className="flex gap-4">
+                    <div className="w-40">
+                      <Select 
+                        label=""
+                        placeholder="Select Role"
+                        value={contributorRole}
+                        onChange={(e) => setContributorRole(e.target.value)}
+                        options={[
+                          { value: 'Author', label: 'Author'},
+                          { value: 'Editor', label: 'Editor'},
+                          { value: 'Compiler', label: 'Compiler'},
+                          { value: 'Translator', label: 'Translator'}
+                        ]}
+                      />
+                    </div>
+                    <div className="flex items-center text-xl">
+                      <p>{contributor}</p>
+                    </div>
                   </div>
-                  <div>
-                    <Input
-                      label=""
-                      placeholder="First Name"
-                      value={contributorFirstName}
-                      onChange={(e) => setContributorFirstName(e.target.value)}
-                      error={errors.title}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Input
-                      label=""
-                      placeholder="Middle Name"
-                      value={contributorMiddleName}
-                      onChange={(e) => setContributorMiddleName(e.target.value)}
-                      error={errors.title}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Input
-                      label=""
-                      placeholder="Last Name"
-                      value={contributorLastName}
-                      onChange={(e) => setContributorLastName(e.target.value)}
-                      error={errors.title}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Input
-                      label=""
-                      placeholder="Suffix"
-                      value={contributorSuffix}
-                      onChange={(e) => setContributorSuffix(e.target.value)}
-                      error={errors.title}
-                      className="w-18"
-                      required
-                    />
-                  </div>
-                  <button>
+                  <button onClick={() => removeContributor(index)}>
                     <FaRegTrashAlt className="text-gray-500 text-xl"/>
                   </button>
                 </li>
+                ))}
               </ol>
-              <div className="flex justify-end mt-1">
+              <div className="flex justify-center mt-1">
                 <Button
                   type="button"
                   size='sm'
@@ -400,8 +381,9 @@ export default function CreateProjectPage() {
                   variant="ghost"
                   onClick={() => console.log('')}
                   disabled={isSubmitting}
+                  className="w-full mt-2"
                 >
-                  Add Contributor
+                  Invite Contributor
                 </Button>
               </div>
             </div>
@@ -436,79 +418,45 @@ export default function CreateProjectPage() {
               <label className="block text-sm font-medium text-neutral-700 mb-2">
                 Adviser and co-adviser (if any) <span className="text-error-500">*</span>
               </label>
-              <div className="flex gap-4">
-                <div className="w-40">
-                  <Select 
-                    label=""
-                    placeholder="Select Role"
-                    value={adviserRole}
-                    onChange={(e) => setAdviserRole(e.target.value)}
-                    options={[
-                      { value: 'Adviser', label: 'Adviser'},
-                      { value: 'Co-adviser', label: 'Co-adviser'}
-                    ]}
-                  />
-                </div>
-                <div>
-                  <Input
-                    label=""
-                    placeholder="First Name"
-                    value={adviserFirstName}
-                    onChange={(e) => setAdviserFirstName(e.target.value)}
-                    error={errors.title}
-                    required
-                  />
-                </div>
-                <div>
-                  <Input
-                    label=""
-                    placeholder="Middle Name"
-                    value={adviserMiddleName}
-                    onChange={(e) => setAdviserMiddleName(e.target.value)}
-                    error={errors.title}
-                    required
-                  />
-                </div>
-                <div>
-                  <Input
-                    label=""
-                    placeholder="Last Name"
-                    value={adviserLastName}
-                    onChange={(e) => setAdviserLastName(e.target.value)}
-                    error={errors.title}
-                    required
-                  />
-                </div>
-                <div>
-                  <Input
-                    label=""
-                    placeholder="Suffix"
-                    value={adviserSuffix}
-                    onChange={(e) => setAdviserSuffix(e.target.value)}
-                    error={errors.title}
-                    required
-                    className="w-18"
-                  />
-                </div>
-                <button>
-                  <FaRegTrashAlt className="text-gray-500 text-xl"/>
-                </button>
-              </div>
-              <div className="flex justify-end mt-1">
-                <Button
-                  type="button"
-                  size='sm'
-                  leftIcon=<FaPlusCircle/>
-                  variant="ghost"
-                  onClick={() => console.log("")}
-                  disabled={isSubmitting}
-                >
-                  Add Adviser
-                </Button>
-              </div>
+              <ol>
+                {advisers.map((adviser, index) => (
+                  <li key={index} className="flex justify-between gap-4 mb-2">
+                    <div className="flex gap-4">
+                      <div className="w-40">
+                        <Select 
+                          label=""
+                          placeholder="Select Role"
+                          value={adviserRole}
+                          onChange={(e) => setAdviserRole(e.target.value)}
+                          options={[
+                            { value: 'Adviser', label: 'Adviser'},
+                            { value: 'Co-adviser', label: 'Co-adviser'}
+                          ]}
+                        />
+                      </div>
+                      <div className="flex items-center text-xl">
+                        <p>{adviser}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => removeAdviser(index)}>
+                      <FaRegTrashAlt className="text-gray-500 text-xl"/>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              <Button
+                type="button"
+                size='sm'
+                leftIcon=<FaPlusCircle/>
+                variant="ghost"
+                onClick={() => console.log("")}
+                disabled={isSubmitting}
+                className="w-full mt-2"
+              >
+                Invite Adviser
+              </Button>
             </div>
             
-
             {/* Paper Standard */}
             <Select
               label="Paper Standard"
