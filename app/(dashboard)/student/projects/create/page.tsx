@@ -7,6 +7,7 @@ import Button from '@/components/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { FiUpload, FiX } from 'react-icons/fi';
+import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa'
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -17,6 +18,7 @@ interface UserProfile {
   avatar?: string;
 }
 
+
 export default function CreateProjectPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -25,11 +27,18 @@ export default function CreateProjectPage() {
 
   // Form state
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [abstract, setAbstract] = useState('');
+  const [keywords, setKeywords] = useState('');
+  const [contributorRole, setContributorRole] = useState('');
+  const [courseType, setCourseType] = useState('');
+  const [adviserRole, setAdviserRole] = useState('');
   const [researchType, setResearchType] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  
+
+  const [contributors, setContributors] = useState<string[]>([]);
+  const [advisers, setAdvisers] = useState<string[]>(['rico', 'joshua']);
+
   // Error state
   const [errors, setErrors] = useState<{
     title?: string;
@@ -83,6 +92,13 @@ export default function CreateProjectPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user && !contributors.includes(user.name)) {
+      setContributors([user.name, ...contributors])
+    }
+  }, [user])
+  
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -159,6 +175,20 @@ export default function CreateProjectPage() {
     setErrors({ ...errors, file: undefined });
   };
 
+  const removeContributor = (index) => {
+    const updatedContributorList = contributors.filter((_, i) => i !== index)
+    if (contributors.length > 1) {
+      setContributors(updatedContributorList)
+    } 
+  }
+
+  const removeAdviser = (index) => {
+    const updatedAdviserList = advisers.filter((_, i) => i !== index)
+    if (advisers.length > 1) {
+      setAdvisers(updatedAdviserList)
+    }
+  }
+
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
 
@@ -166,7 +196,7 @@ export default function CreateProjectPage() {
       newErrors.title = 'Project title is required';
     }
 
-    if (!description.trim()) {
+    if (!abstract.trim()) {
       newErrors.description = 'Project description is required';
     }
 
@@ -191,7 +221,7 @@ export default function CreateProjectPage() {
     try {
       const formData = new FormData();
       formData.append('title', title);
-      formData.append('description', description);
+      formData.append('abstract', abstract);
       formData.append('researchType', researchType);
       
       if (selectedFile) {
@@ -270,26 +300,163 @@ export default function CreateProjectPage() {
               required
             />
 
-            {/* Project Description */}
+            {/* Project Abstract */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Description <span className="text-error-500">*</span>
+                Abstract <span className="text-error-500">*</span>
               </label>
               <textarea
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all ${
                   errors.description ? 'border-error-500' : 'border-neutral-300'
                 }`}
-                placeholder="Provide a brief description of your project"
+                placeholder="Provide the abstract of your project"
                 rows={5}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={abstract}
+                onChange={(e) => setAbstract(e.target.value)}
                 required
               />
               {errors.description && (
                 <p className="mt-1 text-sm text-error-600">{errors.description}</p>
               )}
             </div>
+            
+            {/* Project Keywords */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Keywords <span className="text-error-500">*</span>
+              </label>
+              <textarea
+                className={`w-full h-20 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all ${
+                  errors.description ? 'border-error-500' : 'border-neutral-300'
+                }`}
+                placeholder="Provide the keywords of your project"
+                rows={5}
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+                required
+              />
+              {errors.description && (
+                <p className="mt-1 text-sm text-error-600">{errors.description}</p>
+              )}
+            </div>
+            
+            {/* Contributors and Roles */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Contributors and Roles <span className="text-error-500">*</span>
+              </label>
+              <ol>
+                {contributors.map((contributor, index) => (
+                  <li key={index} className="flex justify-between mb-2">
+                  <div className="flex gap-4">
+                    <div className="w-40">
+                      <Select 
+                        label=""
+                        placeholder="Select Role"
+                        value={contributorRole}
+                        onChange={(e) => setContributorRole(e.target.value)}
+                        options={[
+                          { value: 'Author', label: 'Author'},
+                          { value: 'Editor', label: 'Editor'},
+                          { value: 'Compiler', label: 'Compiler'},
+                          { value: 'Translator', label: 'Translator'}
+                        ]}
+                      />
+                    </div>
+                    <div className="flex items-center text-xl">
+                      <p>{contributor}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => removeContributor(index)}>
+                    <FaRegTrashAlt className="text-gray-500 text-xl"/>
+                  </button>
+                </li>
+                ))}
+              </ol>
+              <div className="flex justify-center mt-1">
+                <Button
+                  type="button"
+                  size='sm'
+                  leftIcon=<FaPlusCircle/>
+                  variant="ghost"
+                  onClick={() => console.log('')}
+                  disabled={isSubmitting}
+                  className="w-full mt-2"
+                >
+                  Invite Contributor
+                </Button>
+              </div>
+            </div>
 
+            {/* Program, course, section */}
+            <div>
+              <div className="grid grid-cols-3 gap-4">
+               <Input
+                label="Program"
+                className=""
+               />
+               <Select 
+                    label="Course"
+                    placeholder="Select Course Type"
+                    value={courseType}
+                    onChange={(e) => setCourseType(e.target.value)}
+                    options={[
+                      { value: 'Thesis', label: 'Thesis'},
+                      { value: 'Capstone', label: 'Capstone'},
+                      { value: 'Custom', label: 'Custom'}
+                    ]}
+                  />
+               <Input
+                label="Section"
+                className=""
+               />
+              </div>
+            </div>
+
+            {/* Adviser and co-adviser (if any) */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Adviser and co-adviser (if any) <span className="text-error-500">*</span>
+              </label>
+              <ol>
+                {advisers.map((adviser, index) => (
+                  <li key={index} className="flex justify-between gap-4 mb-2">
+                    <div className="flex gap-4">
+                      <div className="w-40">
+                        <Select 
+                          label=""
+                          placeholder="Select Role"
+                          value={adviserRole}
+                          onChange={(e) => setAdviserRole(e.target.value)}
+                          options={[
+                            { value: 'Adviser', label: 'Adviser'},
+                            { value: 'Co-adviser', label: 'Co-adviser'}
+                          ]}
+                        />
+                      </div>
+                      <div className="flex items-center text-xl">
+                        <p>{adviser}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => removeAdviser(index)}>
+                      <FaRegTrashAlt className="text-gray-500 text-xl"/>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              <Button
+                type="button"
+                size='sm'
+                leftIcon=<FaPlusCircle/>
+                variant="ghost"
+                onClick={() => console.log("")}
+                disabled={isSubmitting}
+                className="w-full mt-2"
+              >
+                Invite Adviser
+              </Button>
+            </div>
+            
             {/* Paper Standard */}
             <Select
               label="Paper Standard"
