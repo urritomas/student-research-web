@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -29,16 +29,24 @@ export default function Modal({
   closeOnOverlayClick = true,
   showCloseButton = true 
 }: ModalProps) {
+  const [isClosing, setIsClosing] = useState(false);
+  const [shouldRender, setShouldRender] = useState(isOpen);
+
   useEffect(() => {
     if (isOpen) {
+      setShouldRender(true);
+      setIsClosing(false);
       document.body.style.overflow = 'hidden';
-    } else {
+    } else if (shouldRender) {
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+        setIsClosing(false);
+      }, 200); // Match animation duration
       document.body.style.overflow = 'unset';
+      return () => clearTimeout(timer);
     }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
+  }, [isOpen, shouldRender]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -50,18 +58,22 @@ export default function Modal({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Overlay */}
       <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+        className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ${
+          isClosing ? 'opacity-0' : 'animate-fade-in'
+        }`}
         onClick={closeOnOverlayClick ? onClose : undefined}
       />
       
       {/* Modal */}
-      <div className={`relative bg-white rounded-2xl shadow-hard ${sizeStyles[size]} w-full mx-4 animate-slide-up`}>
+      <div className={`relative bg-white rounded-2xl shadow-hard ${sizeStyles[size]} w-full mx-4 transition-all duration-200 ${
+        isClosing ? 'opacity-0 scale-95 translate-y-4' : 'animate-slide-up'
+      }`}>
         {/* Header */}
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between p-6 border-b border-neutral-200">

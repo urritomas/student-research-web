@@ -3,8 +3,12 @@
 import React from 'react';
 import Button from '@/components/Button';
 import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
 import { ModalFooter } from '@/components/ui/Modal';
 import Avatar from '@/components/ui/Avatar';
+import { FiCircle } from 'react-icons/fi';
+import { MdSchedule } from 'react-icons/md';
+import { AiOutlinePause } from 'react-icons/ai';
 
 interface UserProfile {
   name: string;
@@ -19,82 +23,78 @@ interface EditProfileProps {
 }
 
 export default function EditProfile({ user, onClose }: EditProfileProps) {
+  const statusOptions = [
+    { value: 'online', label: '🟢 Online' },
+    { value: 'idle', label: '🟡 Idle' },
+    { value: 'busy', label: '🔴 Busy' },
+  ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Avatar Section */}
-      <div className="flex flex-col items-center gap-4">
-        <Avatar src={user.avatarUrl} name={user.name} size="xl" />
-        <Button variant="error" size="sm">
-          Change Profile
+      <div className="flex flex-col items-center gap-3 pb-4 border-b border-neutral-200">
+        <Avatar src={user.avatarUrl} name={user.name} size="lg" />
+        <Button variant="secondary" size="sm">
+          Change Avatar
         </Button>
       </div>
 
       {/* Form Fields */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {/* Username */}
         <div>
-          <label className="block text-sm font-semibold text-neutral-900 mb-2">
+          <label className="block text-sm font-semibold text-neutral-900 mb-1.5">
             Username
           </label>
           <Input
             type="text"
             placeholder={user.name}
+            defaultValue={user.name}
           />
         </div>
 
         {/* Email */}
         <div>
-          <label className="block text-sm font-semibold text-neutral-900 mb-2">
+          <label className="block text-sm font-semibold text-neutral-900 mb-1.5">
             Email
           </label>
-          <Input
-            type="email"
-            placeholder=""
-            value={user.email}
-            readOnly
-          />
+          <div className="px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm text-neutral-700">
+            {user.email}
+          </div>
         </div>
 
         {/* Role and Status */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-semibold text-neutral-900 mb-2">
+            <label className="block text-sm font-semibold text-neutral-900 mb-1.5">
               Role
             </label>
-            <Input
-              type="text"
-              placeholder=""
-              value={user.role}
-              readOnly
-            />
+            <div className="px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm text-neutral-700">
+              {user.role}
+            </div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-neutral-900 mb-2">
+            <label className="block text-sm font-semibold text-neutral-900 mb-1.5">
               Status
             </label>
-            <Input
-              type="text"
-              placeholder="Enter status"
+            <Select
+              options={statusOptions}
+              placeholder="Select status"
+              defaultValue="online"
             />
           </div>
         </div>
       </div>
 
       {/* Footer Actions */}
-      <ModalFooter className="flex justify-between">
-        <Button variant="outline">
-          Delete Account
+      <div className="flex justify-end gap-2 pt-4 border-t border-neutral-200">
+        <Button variant="outline" onClick={onClose}>
+          Cancel
         </Button>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="error">
-            Update
-          </Button>
-        </div>
-      </ModalFooter>
+        <Button variant="error">
+          Update Profile
+        </Button>
+      </div>
     </div>
   );
 }

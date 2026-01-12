@@ -62,13 +62,28 @@ export default function Button({
   children,
   ...props
 }: ButtonProps) {
+  const shadowColor = {
+    primary: 'hover:shadow-[0_4px_12px_rgba(25,55,109,0.2)] active:shadow-[0_2px_8px_rgba(25,55,109,0.3)]',
+    secondary: 'hover:shadow-[0_4px_12px_rgba(229,231,235,0.4)] active:shadow-[0_2px_8px_rgba(229,231,235,0.5)]',
+    outline: 'hover:shadow-[0_4px_12px_rgba(25,55,109,0.2)] active:shadow-[0_2px_8px_rgba(25,55,109,0.3)]',
+    ghost: 'hover:shadow-[0_4px_12px_rgba(229,231,235,0.4)] active:shadow-[0_2px_8px_rgba(229,231,235,0.5)]',
+    success: 'hover:shadow-[0_4px_12px_rgba(76,175,80,0.2)] active:shadow-[0_2px_8px_rgba(76,175,80,0.3)]',
+    error: 'hover:shadow-[0_4px_12px_rgba(220,53,69,0.2)] active:shadow-[0_2px_8px_rgba(220,53,69,0.3)]',
+    warning: 'hover:shadow-[0_4px_12px_rgba(255,193,7,0.2)] active:shadow-[0_2px_8px_rgba(255,193,7,0.3)]',
+    primaryBg: 'hover:shadow-[0_4px_12px_rgba(245,245,220,0.4)] active:shadow-[0_2px_8px_rgba(245,245,220,0.5)]',
+    primaryTxt: 'hover:shadow-[0_4px_12px_rgba(25,55,109,0.2)] active:shadow-[0_2px_8px_rgba(25,55,109,0.3)]',
+    secondaryBg: 'hover:shadow-[0_4px_12px_rgba(211,211,211,0.4)] active:shadow-[0_2px_8px_rgba(211,211,211,0.5)]',
+    accent: 'hover:shadow-[0_4px_12px_rgba(135,206,235,0.2)] active:shadow-[0_2px_8px_rgba(135,206,235,0.3)]',
+    alert: 'hover:shadow-[0_4px_12px_rgba(220,53,69,0.2)] active:shadow-[0_2px_8px_rgba(220,53,69,0.3)]',
+  };
+
   return (
     <button
       className={`
         inline-flex items-center justify-center gap-2
         font-medium rounded-lg
         transition-all duration-200
-        focus:outline-none focus:ring-2 focus:ring-offset-2
+        focus:outline-none ${shadowColor[variant]}
         disabled:cursor-not-allowed disabled:opacity-60
         ${variantStyles[variant]}
         ${sizeStyles[size]}

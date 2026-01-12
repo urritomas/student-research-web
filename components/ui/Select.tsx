@@ -31,10 +31,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             w-full px-4 py-2.5 
             border rounded-lg
             ${error 
-              ? 'border-error-500 focus:ring-error-500 focus:border-error-500' 
-              : 'border-neutral-300 focus:ring-accent-300 focus:border-accent-300'
+              ? 'border-error-500 focus:shadow-[0_0_12px_rgba(236,30,36,0.15)]' 
+              : 'border-neutral-300 focus:shadow-[0_0_12px_rgba(236,30,36,0.15)]'
             }
-            focus:outline-none focus:ring-2
+            focus:outline-none
             disabled:bg-neutral-100 disabled:cursor-not-allowed
             bg-white
             transition-colors
