@@ -49,9 +49,23 @@ export async function POST(request: Request) {
     // Parse form data
     const formData = await request.formData();
     const title = formData.get('title')?.toString();
-    const description = formData.get('description')?.toString();
+    const description = formData.get('abstract')?.toString();
     const researchType = formData.get('researchType')?.toString();
+    const program = formData.get('program')?.toString();
+    const course = formData.get('course')?.toString();
+    const section = formData.get('section')?.toString();
+    const keywordsJson = formData.get('keywords')?.toString();
     const file = formData.get('file') as File | null;
+    
+    // Parse keywords array
+    let keywords: string[] = [];
+    if (keywordsJson) {
+      try {
+        keywords = JSON.parse(keywordsJson);
+      } catch {
+        keywords = [];
+      }
+    }
 
     // Validate required fields
     if (!title || !description) {
@@ -101,11 +115,15 @@ export async function POST(request: Request) {
       project_code: projectCode,
       title: title.trim(),
       description: description.trim(),
+      abstract: description.trim(),
+      program: program?.trim() || null,
+      course: course?.trim() || null,
+      section: section?.trim() || null,
       project_type: 'independent',
       status: 'draft',
       paper_standard: researchType,
       created_by: user.id,
-      keywords: [],
+      keywords: keywords,
     };
 
     // Insert project into database first to get project ID
