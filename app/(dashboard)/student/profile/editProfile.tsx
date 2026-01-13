@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Button from '@/components/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -22,8 +22,10 @@ interface EditProfileProps {
 
 export default function EditProfile({ user, onClose }: EditProfileProps) {
   const [name, setName] = useState(user.name);
+  const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const statusOptions = [
     { value: 'online', label: '🟢 Online' },
@@ -31,43 +33,91 @@ export default function EditProfile({ user, onClose }: EditProfileProps) {
     { value: 'busy', label: '🔴 Busy' },
   ];
 
-  // Handle updating the username
-const handleUpdate = async () => {
-  setLoading(true);
-  setError(null);
+  // Handle username update
+  const handleUpdate = async () => {
+    setLoading(true);
+    setError(null);
 
-  try {
-    // Get the logged-in user's UUID
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (!user) throw new Error('No user logged in');
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user logged in');
 
-    const result = await updateUserProfile(user.id, { full_name: name });
-    console.log('Profile updated:', result);
-    onClose();
-  } catch (err: any) {
-    console.error('Profile update error (catch):', err);
-    setError(err.message || 'Failed to update profile');
-  } finally {
-    setLoading(false);
-  }
-};
+      // Update both username and avatar URL
+      const result = await updateUserProfile(user.id, { 
+        full_name: name,
+        ...(avatarUrl ? { avatar_url: avatarUrl } : {})
+      });
 
-
-  // Optional: allow pressing Enter to submit
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleUpdate();
+      console.log('Profile updated:', result);
+      onClose();
+    } catch (err: any) {
+      console.error('Profile update error:', err);
+      setError(err.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Handle Enter key for username input
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleUpdate();
+  };
+
+  // Handle avatar file selection and upload
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user logged in');
+      if (userError) throw userError;
+
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      
+      const { error: uploadError } = await supabase.storage
+        .from('Profile_pictures')
+        .upload(filePath, file, { upsert: true, cacheControl: '3600' });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('Profile_pictures').getPublicUrl(filePath);
+      if (!data?.publicUrl) throw new Error('Failed to get public URL');
+
+      setAvatarUrl(data.publicUrl);
+    } catch (err: any) {
+      console.error('Avatar upload error:', err);
+      setError(err.message || 'Failed to upload avatar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
   };
 
   return (
     <div className="space-y-5">
       {/* Avatar Section */}
       <div className="flex flex-col items-center gap-3 pb-4 border-b border-neutral-200">
-        <Avatar src={user.avatarUrl} name={user.name} size="lg" />
-        <Button variant="secondary" size="sm" disabled>
+        <Avatar src={avatarUrl} name={name} size="lg" />
+        <Button variant="secondary" size="sm" onClick={openFilePicker}>
           Change Avatar
         </Button>
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          ref={fileInputRef}
+          onChange={handleAvatarChange}
+        />
       </div>
 
       {/* Form Fields */}
