@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardTitle, CardDescription } from '@/components/ui/Card';
+import JoinGroupCard from '@/components/ui/JoinGroupCard';
 import { FiUsers, FiFolder, FiCalendar, FiTrendingUp } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
@@ -108,6 +109,9 @@ export default function AdviserDashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Join a Group Section */}
+          <JoinGroupCard />
+
           <Card>
             <CardTitle>Recent Activity</CardTitle>
             <CardDescription>Latest updates from your advisees</CardDescription>
@@ -115,7 +119,9 @@ export default function AdviserDashboardPage() {
               <p className="text-sm text-neutral-600">No recent activity</p>
             </div>
           </Card>
+        </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardTitle>Pending Reviews</CardTitle>
             <CardDescription>Documents awaiting your feedback</CardDescription>

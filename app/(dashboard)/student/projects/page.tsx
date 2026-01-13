@@ -92,17 +92,56 @@ export default function StudentProjectsPage() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) return;
 
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('created_by', authUser.id)
-        .order('created_at', { ascending: false });
+      // Fetch projects where user is the creator OR a member
+      const [createdProjects, memberProjects] = await Promise.all([
+        // Projects created by user
+        supabase
+          .from('projects')
+          .select('*')
+          .eq('created_by', authUser.id),
+        
+        // Projects where user is a member
+        supabase
+          .from('project_members')
+          .select(`
+            project_id,
+            role,
+            status,
+            projects (*)
+          `)
+          .eq('user_id', authUser.id)
+          .eq('status', 'accepted')
+      ]);
 
-      if (error) {
-        console.error('Error fetching projects:', error);
-      } else {
-        setProjects(data || []);
+      if (createdProjects.error) {
+        console.error('Error fetching created projects:', createdProjects.error);
       }
+
+      if (memberProjects.error) {
+        console.error('Error fetching member projects:', memberProjects.error);
+      }
+
+      // Combine and deduplicate projects
+      const allProjects = [
+        ...(createdProjects.data || []),
+        ...(memberProjects.data?.map((m: any) => m.projects).filter(Boolean) || [])
+      ];
+
+      // Remove duplicates based on project id
+      const uniqueProjects = allProjects.reduce((acc: any[], current: any) => {
+        const exists = acc.find(p => p.id === current.id);
+        if (!exists) {
+          acc.push(current);
+        }
+        return acc;
+      }, []);
+
+      // Sort by created_at
+      uniqueProjects.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setProjects(uniqueProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
     } finally {
