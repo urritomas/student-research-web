@@ -30,33 +30,33 @@ A comprehensive web-based platform for managing academic research projects from 
 ### Installation
 
 1. Clone the repository
-\`\`\`bash
+```bash
 git clone <repository-url>
 cd student-research-web
-\`\`\`
+```
 
 2. Install dependencies
-\`\`\`bash
+```bash
 pnpm install
-\`\`\`
+```
 
 3. Set up environment variables
 Create a \`.env.local\` file in the root directory:
-\`\`\`env
+```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-\`\`\`
+```
 
 4. Run the development server
-\`\`\`bash
+```bash
 pnpm dev
-\`\`\`
+```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## 📁 Project Structure
 
-\`\`\`
+```
 student-research-web/
 ├── app/
 │   ├── (auth)/              # Authentication routes (login, register)
@@ -94,7 +94,7 @@ student-research-web/
 ├── tailwind.config.js       # Tailwind CSS configuration
 ├── DESIGN.md               # Design system documentation
 └── README.md
-\`\`\`
+```
 
 ## 🎨 Design System
 
@@ -147,7 +147,7 @@ Route protection is handled by Next.js middleware that checks Supabase authentic
 ## 🧩 Component Usage
 
 ### Example: Creating a Form
-\`\`\`tsx
+```tsx
 import { Input, Select, Button } from '@/components/ui';
 
 <form>
@@ -167,10 +167,10 @@ import { Input, Select, Button } from '@/components/ui';
     Submit
   </Button>
 </form>
-\`\`\`
+```
 
 ### Example: Using Dashboard Layout
-\`\`\`tsx
+```tsx
 import DashboardLayout from '@/components/layout/DashboardLayout';
 
 export default function MyPage() {
@@ -180,7 +180,7 @@ export default function MyPage() {
     </DashboardLayout>
   );
 }
-\`\`\`
+```
 
 ## 🛠️ Development
 
