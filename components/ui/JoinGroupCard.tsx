@@ -3,13 +3,66 @@
 import React, { useState } from 'react';
 import Card from './Card';
 import Button from '../Button';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function JoinGroupCard() {
   const [groupCode, setGroupCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleJoinGroup = () => {
-    console.log('Joining group with code:', groupCode);
-    // Add your join group logic here
+  const handleJoinGroup = async () => {
+    if (!groupCode.trim()) {
+      setError('Please enter a group code');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      // Get current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        setError('You must be logged in to join a group');
+        return;
+      }
+
+      // Call API to join project with authorization header
+      const response = await fetch('/api/projects/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          projectCode: groupCode,
+          userId: session.user.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('API Error:', data);
+        throw new Error(data.error || 'Failed to join project');
+      }
+
+      setSuccess(`Successfully joined "${data.project.title}"!`);
+      setGroupCode('');
+      
+      // Refresh the page after 2 seconds to show updated projects
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (err: any) {
+      console.error('Error joining group:', err);
+      setError(err.message || 'Failed to join group. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -27,6 +80,18 @@ export default function JoinGroupCard() {
           </p>
           
           <div className="space-y-3">
+            {error && (
+              <div className="p-3 bg-error-50 border border-error-200 rounded-lg">
+                <p className="text-xs text-error-700">{error}</p>
+              </div>
+            )}
+            
+            {success && (
+              <div className="p-3 bg-success-50 border border-success-200 rounded-lg">
+                <p className="text-xs text-success-700">{success}</p>
+              </div>
+            )}
+
             <div>
               <label className="block text-xs font-medium text-neutral-700 mb-1.5">
                 Group Code
@@ -34,11 +99,22 @@ export default function JoinGroupCard() {
               <input
                 type="text"
                 value={groupCode}
-                onChange={(e) => setGroupCode(e.target.value)}
+                onChange={(e) => {
+                  setGroupCode(e.target.value);
+                  setError(null);
+                  setSuccess(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !isLoading) {
+                    handleJoinGroup();
+                  }
+                }}
                 placeholder="Enter group code"
+                disabled={isLoading}
                 className="w-full px-4 py-2.5 border border-neutral-300 rounded-lg 
-                         focus:outline-none focus:ring-2 focus:ring-skyBlue focus:border-transparent
-                         text-sm placeholder:text-neutral-400"
+                         focus:outline-none focus:shadow-[0_0_12px_rgba(236,30,36,0.15)]
+                         text-sm placeholder:text-neutral-400
+                         disabled:bg-neutral-100 disabled:cursor-not-allowed"
               />
             </div>
             
@@ -46,17 +122,21 @@ export default function JoinGroupCard() {
               variant="error"
               fullWidth
               onClick={handleJoinGroup}
+              disabled={isLoading}
+              loading={isLoading}
               className="bg-crimsonRed hover:bg-crimsonRed/90"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Join Group
+              {!isLoading && (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              )}
+              {isLoading ? 'Joining...' : 'Join Group'}
             </Button>
           </div>
           
           <p className="text-xs text-neutral-500 mt-3">
-            Don't have a group code? Contact your adviser to get an invitation.
+            Group code is available in the projects page.
           </p>
         </div>
       </div>
