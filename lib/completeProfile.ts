@@ -195,3 +195,29 @@ export async function completeProfile(
     };
   }
 }
+
+// Additional function to update user profile information
+export async function updateUserProfile(
+  userId: string,
+  data: { full_name?: string }
+) {
+  if (!userId) {
+    throw new Error('User ID is required to update profile');
+  }
+
+  const { data: updatedData, error } = await supabase
+    .from('users')
+    .update({
+      ...data,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId)
+    .select(); // return updated row for debugging
+
+  if (error) {
+    console.error('Profile update error:', error);
+    throw new Error(error.message || JSON.stringify(error));
+  }
+
+  return updatedData;
+}
