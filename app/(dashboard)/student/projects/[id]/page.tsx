@@ -90,7 +90,7 @@ export default function ProjectDetailPage() {
     router.push('/login');
   };
 
-  const copyProjectCode = () => {
+  const copyProjectCode = () => { 
     if (project?.project_code) {
       navigator.clipboard.writeText(project.project_code);
       setCodeCopied(true);
@@ -231,6 +231,7 @@ export default function ProjectDetailPage() {
           </div>
         </Card>
       </div>
+      <Button variant='alert' size='xl' onClick={() => router.push(`/${user.role.toLowerCase()}/projects/${project.id}/edit`)}>EDIT THIS PROJECT</Button>
     </DashboardLayout>
   );
 }
