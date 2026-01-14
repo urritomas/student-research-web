@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/Button';
+import Avatar from '@/components/ui/Avatar';
 import { FiFolder, FiUsers, FiCalendar, FiFileText, FiCopy, FiCheck } from 'react-icons/fi';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -28,11 +29,24 @@ interface Project {
   created_by: string;
 }
 
+interface ProjectMember {
+  id: string;
+  role: string;
+  status: string;
+  user_id: string;
+  users: {
+    full_name: string;
+    email: string;
+    avatar_url?: string;
+  } | null;
+}
+
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [project, setProject] = useState<Project | null>(null);
+  const [members, setMembers] = useState<ProjectMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [codeCopied, setCodeCopied] = useState(false);
 
@@ -78,6 +92,66 @@ export default function ProjectDetailPage() {
       }
 
       setProject(projectData);
+
+      // Fetch project creator
+      const { data: creatorData, error: creatorError } = await supabase
+        .from('users')
+        .select('id, full_name, email, avatar_url')
+        .eq('id', projectData.created_by)
+        .single();
+
+      if (creatorError) {
+        console.error('Error fetching creator:', creatorError);
+      }
+
+      // Fetch project members
+      const { data: membersData, error: membersError } = await supabase
+        .from('project_members')
+        .select(`
+          id,
+          role,
+          status,
+          user_id,
+          users (
+            full_name,
+            email,
+            avatar_url
+          )
+        `)
+        .eq('project_id', params.id)
+        .eq('status', 'accepted');
+
+      if (membersError) {
+        console.error('Error fetching members:', membersError);
+      }
+
+      // Combine creator and members, avoiding duplicates
+      const allMembers: ProjectMember[] = [];
+      
+      // Add creator first with owner role
+      if (creatorData) {
+        allMembers.push({
+          id: 'creator',
+          role: 'owner',
+          status: 'accepted',
+          user_id: creatorData.id,
+          users: {
+            full_name: creatorData.full_name,
+            email: creatorData.email,
+            avatar_url: creatorData.avatar_url,
+          },
+        });
+      }
+
+      // Add other members (excluding the creator if they appear in members)
+      if (membersData) {
+        const otherMembers = (membersData as any as ProjectMember[]).filter(
+          (member) => member.user_id !== projectData.created_by
+        );
+        allMembers.push(...otherMembers);
+      }
+
+      setMembers(allMembers);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -210,13 +284,15 @@ export default function ProjectDetailPage() {
           </Card>
         )}
 
-        {/* Team Members Section (Placeholder) */}
+        {/* Team Members Section */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Team Members</CardTitle>
-                <CardDescription>Collaborate with your team</CardDescription>
+                <CardDescription>
+                  {members.length} {members.length === 1 ? 'member' : 'members'}
+                </CardDescription>
               </div>
               <Button variant="primary" size="sm">
                 <FiUsers className="mr-2" />
@@ -225,9 +301,49 @@ export default function ProjectDetailPage() {
             </div>
           </CardHeader>
           <div className="mt-4">
-            <p className="text-neutral-500 text-sm">
-              Share your project code with team members to invite them to collaborate.
-            </p>
+            {members.length > 0 ? (
+              <div className="space-y-3">
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className={`flex items-center gap-4 p-3 border rounded-lg transition-colors ${
+                      member.role === 'owner'
+                        ? 'border-primary-300 bg-primary-50/50'
+                        : 'border-neutral-200 hover:bg-neutral-50'
+                    }`}
+                  >
+                    <Avatar
+                      src={member.users?.avatar_url}
+                      name={member.users?.full_name || member.users?.email || 'Unknown'}
+                      size="md"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-neutral-900">
+                          {member.users?.full_name || 'Unknown User'}
+                        </h4>
+                        {member.role === 'owner' && (
+                          <span className="text-xs text-primary-600 font-medium">
+                            (Owner)
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-neutral-600">{member.users?.email}</p>
+                    </div>
+                    <Badge variant={
+                      member.role === 'owner' ? 'primary' :
+                      member.role === 'adviser' ? 'success' : 'default'
+                    }>
+                      {member.role}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-neutral-500 text-sm">
+                No team members yet. Share your project code with team members to invite them to collaborate.
+              </p>
+            )}
           </div>
         </Card>
       </div>

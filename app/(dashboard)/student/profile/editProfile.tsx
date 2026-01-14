@@ -22,6 +22,7 @@ interface EditProfileProps {
 
 export default function EditProfile({ user, onClose }: EditProfileProps) {
   const [name, setName] = useState(user.name);
+  const [status, setStatus] = useState('online');
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -163,8 +164,8 @@ export default function EditProfile({ user, onClose }: EditProfileProps) {
             <Select
               options={statusOptions}
               placeholder="Select status"
-              defaultValue="online"
-              disabled
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
             />
           </div>
         </div>

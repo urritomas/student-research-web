@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Dropdown from '../ui/Dropdown';
 import Avatar from '../ui/Avatar';
+import { useRouter, usePathname } from 'next/navigation';
 import { FiBell, FiSettings, FiLogOut, FiUser } from 'react-icons/fi';
 
 export interface HeaderProps {
@@ -17,12 +18,22 @@ export interface HeaderProps {
 }
 
 export default function Header({ user, onLogout }: HeaderProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const userMenuItems = [
     {
       label: 'Profile',
       value: 'profile',
       icon: <FiUser />,
-      onClick: () => console.log('Navigate to profile'),
+      onClick: () => {
+        if (user) {
+          const url = `/${user.role.toLowerCase()}/profile`;
+          if (pathname === url) {
+            return;
+          }
+          router.replace(url)
+        }
+      },
     },
     {
       label: 'Settings',
