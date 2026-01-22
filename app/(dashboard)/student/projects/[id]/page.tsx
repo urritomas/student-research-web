@@ -6,8 +6,9 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/Button';
+import Modal from '@/components/ui/Modal';
 import Avatar from '@/components/ui/Avatar';
-import { FiFolder, FiUsers, FiCalendar, FiFileText, FiCopy, FiCheck } from 'react-icons/fi';
+import { FiFolder, FiUsers, FiCalendar, FiFileText, FiCopy, FiCheck, FiEye, FiEdit2, FiDownload } from 'react-icons/fi';
 import { supabase } from '@/lib/supabaseClient';
 
 interface UserProfile {
@@ -49,6 +50,8 @@ export default function ProjectDetailPage() {
   const [members, setMembers] = useState<ProjectMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [showDocxModal, setShowDocxModal] = useState(false);
+  const [currentDocxFile, setCurrentDocxFile] = useState<{ name: string; url: string } | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -172,6 +175,64 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const getFileExtension = (url: string): string => {
+    const fileName = url.split('/').pop() || '';
+    const extension = fileName.split('.').pop()?.toLowerCase() || '';
+    return extension;
+  };
+
+  const getFileName = (url: string): string => {
+    return url.split('/').pop() || 'document';
+  };
+
+  const handleFileAttachmentClick = (url: string) => {
+    const extension = getFileExtension(url);
+    const fileName = getFileName(url);
+
+    switch (extension) {
+      case 'pdf':
+        // Direct open for PDF files
+        window.open(url, '_blank', 'noopener,noreferrer');
+        break;
+      
+      case 'docx':
+      case 'doc':
+        // Show modal for DOCX files
+        setCurrentDocxFile({ name: fileName, url });
+        setShowDocxModal(true);
+        break;
+      
+      default:
+        // Default behavior for other file types
+        window.open(url, '_blank', 'noopener,noreferrer');
+        break;
+    }
+  };
+
+  const handleDocxView = () => {
+    if (currentDocxFile) {
+      // Open in read-only preview mode
+      // For now, open in new tab (can be enhanced with custom viewer)
+      window.open(currentDocxFile.url, '_blank', 'noopener,noreferrer');
+      setShowDocxModal(false);
+      setCurrentDocxFile(null);
+    }
+  };
+
+  const handleDocxEdit = () => {
+    if (currentDocxFile) {
+      // Navigate to word processor with file reference
+      router.push(`/word-processor?file=${encodeURIComponent(currentDocxFile.url)}&name=${encodeURIComponent(currentDocxFile.name)}`);
+      setShowDocxModal(false);
+      setCurrentDocxFile(null);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowDocxModal(false);
+    setCurrentDocxFile(null);
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -269,17 +330,19 @@ export default function ProjectDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle>Attached Document</CardTitle>
+              <CardDescription>Click to open the document</CardDescription>
             </CardHeader>
             <div className="mt-4">
-              <a
-                href={project.document_reference}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-600 hover:text-primary-700 underline flex items-center gap-2"
+              <button
+                onClick={() => handleFileAttachmentClick(project.document_reference!)}
+                className="text-primary-600 hover:text-primary-700 hover:underline flex items-center gap-2 transition-colors group"
               >
-                <FiFileText />
-                View Document
-              </a>
+                <FiFileText className="group-hover:scale-110 transition-transform" />
+                <span className="font-medium">{getFileName(project.document_reference)}</span>
+                <span className="text-xs text-neutral-500 uppercase">
+                  .{getFileExtension(project.document_reference)}
+                </span>
+              </button>
             </div>
           </Card>
         )}
@@ -347,6 +410,42 @@ export default function ProjectDetailPage() {
           </div>
         </Card>
       </div>
+
+      {/* DOCX File Modal */}
+      <Modal
+        isOpen={showDocxModal}
+        onClose={handleCloseModal}
+        title={`Open ${currentDocxFile?.name || 'Document'}`}
+      >
+        <div className="space-y-4">
+          <p className="text-neutral-700">
+            How would you like to open this document?
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={handleDocxView}
+              className="flex-1 flex items-center justify-center gap-2"
+            >
+              <FiEye />
+              View (Read-Only)
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleDocxEdit}
+              className="flex-1 flex items-center justify-center gap-2"
+            >
+              <FiEdit2 />
+              Edit Document
+            </Button>
+          </div>
+
+          <p className="text-xs text-neutral-500 text-center pt-2">
+            View mode opens the document for reading. Edit mode opens it in the word processor.
+          </p>
+        </div>
+      </Modal>
     </DashboardLayout>
   );
 }

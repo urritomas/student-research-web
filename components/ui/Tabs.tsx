@@ -29,15 +29,15 @@ export default function Tabs({ tabs, defaultValue, onChange, children, variant =
   return (
     <div className="w-full">
       {/* Tab Headers */}
-      <div className={`flex gap-2 ${variant === 'line' ? 'border-b border-neutral-200' : ''}`}>
+      <div className={`flex gap-1 sm:gap-2 ${variant === 'line' ? 'border-b border-neutral-200' : ''} overflow-x-auto`}>
         {tabs.map((tab) => (
           <button
             key={tab.value}
             onClick={() => !tab.disabled && handleTabChange(tab.value)}
             disabled={tab.disabled}
             className={`
-              flex items-center gap-2 px-4 py-2.5 font-medium text-sm
-              transition-colors relative
+              flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm
+              transition-colors relative whitespace-nowrap
               ${tab.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
               ${variant === 'line' 
                 ? activeTab === tab.value
@@ -49,10 +49,11 @@ export default function Tabs({ tabs, defaultValue, onChange, children, variant =
               }
             `}
           >
-            {tab.icon && <span className="text-lg">{tab.icon}</span>}
-            {tab.label}
+            {tab.icon && <span className="text-base sm:text-lg">{tab.icon}</span>}
+            <span className="hidden sm:inline">{tab.label}</span>
+            <span className="sm:hidden">{tab.label.slice(0, 4)}</span>
             {tab.badge !== undefined && (
-              <span className="ml-1 px-2 py-0.5 text-xs bg-error-500 text-white rounded-full">
+              <span className="ml-1 px-1.5 sm:px-2 py-0.5 text-xs bg-error-500 text-white rounded-full">
                 {tab.badge}
               </span>
             )}
@@ -61,7 +62,7 @@ export default function Tabs({ tabs, defaultValue, onChange, children, variant =
       </div>
 
       {/* Tab Content */}
-      <div className="mt-4">
+      <div className="mt-2 sm:mt-4">
         {React.Children.map(children, (child) => {
           if (React.isValidElement<{ value: string }>(child) && child.props.value === activeTab) {
             return child;

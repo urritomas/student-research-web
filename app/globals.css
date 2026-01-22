@@ -25,6 +25,36 @@
   ::-webkit-scrollbar-thumb {
     @apply bg-neutral-300 rounded-full hover:bg-neutral-400;
   }
+
+  /* Word Processor Page Break */
+  .page-break {
+    page-break-after: always;
+    break-after: page;
+    border-top: 2px dashed #cbd5e0;
+    margin: 20px 0;
+    padding: 10px 0;
+    text-align: center;
+    color: #a0aec0;
+    font-size: 12px;
+    user-select: none;
+  }
+
+  .page-break::before {
+    content: '--- Page Break ---';
+  }
+
+  /* Print styles */
+  @media print {
+    .page-break {
+      border: none;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .page-break::before {
+      content: '';
+    }
+  }
 }
 
 
