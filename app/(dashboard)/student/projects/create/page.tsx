@@ -7,21 +7,18 @@ import { Card, Input, Select } from '@/components/ui';
 import Button from '@/components/Button';
 import { FiUpload, FiX } from 'react-icons/fi';
 import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
-import { supabase } from '@/lib/supabaseClient';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  role: string;
-  avatar?: string;
-}
-
+import { MOCK_STUDENT } from '@/lib/mock-data';
 
 export default function CreateProjectPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const user = {
+    name: MOCK_STUDENT.full_name,
+    email: MOCK_STUDENT.email,
+    role: 'Student',
+    avatar: MOCK_STUDENT.avatar_url,
+  };
 
   // Form state
   const [title, setTitle] = useState('');
@@ -50,59 +47,12 @@ export default function CreateProjectPage() {
   }>({});
 
   useEffect(() => {
-    fetchUserProfile();
+    if (!contributors.includes(user.name)) {
+      setContributors([user.name, ...contributors]);
+    }
   }, []);
 
-  const fetchUserProfile = async () => {
-    try {
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !authUser) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('full_name, email, avatar_url')
-        .eq('id', authUser.id)
-        .single();
-
-      if (profileError) {
-        setUser({
-          name: authUser.email || 'User',
-          email: authUser.email || '',
-          role: 'Student',
-        });
-      } else {
-        setUser({
-          name: profile.full_name || authUser.email || 'User',
-          email: profile.email || authUser.email || '',
-          role: 'Student',
-          avatar: profile.avatar_url || undefined,
-        });
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-      setUser({
-        name: 'User',
-        email: '',
-        role: 'Student',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user && !contributors.includes(user.name)) {
-      setContributors([user.name, ...contributors])
-    }
-  }, [user])
-  
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
     router.push('/login');
   };
 
@@ -265,62 +215,17 @@ export default function CreateProjectPage() {
     setIsSubmitting(true);
     setErrors({});
 
-    try {
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('abstract', abstract);
-      formData.append('keywords', JSON.stringify(keywords));
-      formData.append('researchType', researchType);
-      formData.append('program', program);
-      formData.append('course', course);
-      formData.append('section', section);
-      
-      if (selectedFile) {
-        formData.append('file', selectedFile);
-      }
-
-      const response = await fetch('/api/projects/create', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create project');
-      }
-
-      // Redirect to the projects list page
-      router.push('/student/projects');
-    } catch (error: any) {
-      console.error('Error creating project:', error);
-      setErrors({ general: error.message || 'Failed to create project. Please try again.' });
-    } finally {
+    // Mock submission — just wait a moment and redirect
+    setTimeout(() => {
       setIsSubmitting(false);
-    }
+      router.push('/student/projects');
+    }, 1000);
   };
 
   const clearAttachment = () => {
     setSelectedFile(null);
     setErrors({ ...errors, file: undefined });
   };
-
-  if (isLoading) {
-    return (
-      <DashboardLayout role="student" user={{ name: 'Loading...', email: '', role: 'Student' }} onLogout={handleLogout}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center space-y-4">
-            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent"></div>
-            <p className="text-neutral-600">Loading...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
 
   return (
     <DashboardLayout role="student" user={user} onLogout={handleLogout}>

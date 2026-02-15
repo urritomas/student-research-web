@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import Button from '@/components/Button';
@@ -8,175 +8,35 @@ import Badge from '@/components/ui/Badge';
 import Avatar from '@/components/ui/Avatar';
 import { FiArrowLeft, FiClock, FiUsers, FiFileText } from 'react-icons/fi';
 import { useRouter, useParams } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
 import StatusIcon from '@/components/StatusIcon';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  role: string;
-  avatar?: string;
-}
-
-interface ProjectMember {
-  user_id: string;
-  role: string;
-  status: string;
-  users: {
-    full_name: string;
-    email: string;
-    avatar_url?: string;
-  } | null;
-}
-
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  project_type: string;
-  status: string;
-  project_code: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
+import { MOCK_ADVISER, MOCK_ADVISED_PROJECTS, MOCK_PROJECT_MEMBERS } from '@/lib/mock-data';
 
 export default function AdviserProjectDetailPage() {
   const router = useRouter();
   const params = useParams();
   const projectId = params.id as string;
-  
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [project, setProject] = useState<Project | null>(null);
-  const [projectOwner, setProjectOwner] = useState<UserProfile | null>(null);
-  const [members, setMembers] = useState<ProjectMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  useEffect(() => {
-    if (user && projectId) {
-      fetchProjectDetails();
-    }
-  }, [user, projectId]);
-
-  const fetchUserProfile = async () => {
-    try {
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !authUser) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('full_name, email, avatar_url')
-        .eq('id', authUser.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        setUser({
-          name: authUser.email || 'User',
-          email: authUser.email || '',
-          role: 'Adviser',
-        });
-      } else {
-        setUser({
-          name: profile.full_name || authUser.email || 'User',
-          email: profile.email || authUser.email || '',
-          role: 'Adviser',
-          avatar: profile.avatar_url || undefined,
-        });
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  const user = {
+    name: MOCK_ADVISER.full_name,
+    email: MOCK_ADVISER.email,
+    role: 'Adviser',
+    avatar: MOCK_ADVISER.avatar_url,
   };
 
-  const fetchProjectDetails = async () => {
-    try {
-      // Fetch project details
-      const { data: projectData, error: projectError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single();
+  const project = MOCK_ADVISED_PROJECTS.find(p => p.id === projectId) || MOCK_ADVISED_PROJECTS[0];
 
-      if (projectError) {
-        console.error('Error fetching project:', projectError);
-        router.push('/adviser/advisees');
-        return;
-      }
-
-      setProject(projectData);
-
-      // Fetch project owner
-      const { data: ownerData, error: ownerError } = await supabase
-        .from('users')
-        .select('full_name, email, avatar_url')
-        .eq('id', projectData.created_by)
-        .single();
-
-      if (!ownerError && ownerData) {
-        setProjectOwner({
-          name: ownerData.full_name || ownerData.email,
-          email: ownerData.email,
-          role: 'Owner',
-          avatar: ownerData.avatar_url || undefined,
-        });
-      }
-
-      // Fetch project members
-      const { data: membersData, error: membersError } = await supabase
-        .from('project_members')
-        .select(`
-          user_id,
-          role,
-          status,
-          users!inner (
-            full_name,
-            email,
-            avatar_url
-          )
-        `)
-        .eq('project_id', projectId)
-        .eq('status', 'accepted');
-
-      if (!membersError && membersData) {
-        setMembers(membersData as any as ProjectMember[]);
-      }
-    } catch (error) {
-      console.error('Error loading project details:', error);
-    }
+  const projectOwner = {
+    name: 'Maria Santos',
+    email: 'maria.santos@university.edu',
+    role: 'Owner',
+    avatar: undefined as string | undefined,
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const members = MOCK_PROJECT_MEMBERS;
+
+  const handleLogout = () => {
     router.push('/login');
   };
-
-  if (isLoading) {
-    return (
-      <DashboardLayout role="adviser" user={{ name: 'Loading...', email: '', role: 'Adviser' }} onLogout={handleLogout}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center space-y-4">
-            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent"></div>
-            <p className="text-neutral-600">Loading...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!user || !project) {
-    return null;
-  }
 
   return (
     <DashboardLayout role="adviser" user={user} onLogout={handleLogout}>
@@ -220,22 +80,20 @@ export default function AdviserProjectDetailPage() {
               </CardHeader>
               <div className="mt-4 space-y-4">
                   {/* Project Owner */}
-                  {projectOwner && (
-                    <div className="flex items-center justify-between p-3 bg-primary-50 rounded-lg border-2 border-primary-200">
-                      <div className="flex items-center gap-3">
-                        <Avatar 
-                          src={projectOwner.avatar} 
-                          name={projectOwner.name} 
-                          size="md"
-                        />
-                        <div>
-                          <p className="font-semibold text-primary-900">{projectOwner.name}</p>
-                          <p className="text-sm text-primary-700">{projectOwner.email}</p>
-                        </div>
+                  <div className="flex items-center justify-between p-3 bg-primary-50 rounded-lg border-2 border-primary-200">
+                    <div className="flex items-center gap-3">
+                      <Avatar 
+                        src={projectOwner.avatar} 
+                        name={projectOwner.name} 
+                        size="md"
+                      />
+                      <div>
+                        <p className="font-semibold text-primary-900">{projectOwner.name}</p>
+                        <p className="text-sm text-primary-700">{projectOwner.email}</p>
                       </div>
-                      <Badge variant="default">Owner</Badge>
                     </div>
-                  )}
+                    <Badge variant="default">Owner</Badge>
+                  </div>
 
                   {/* Other Members */}
                   {members.length > 0 ? (

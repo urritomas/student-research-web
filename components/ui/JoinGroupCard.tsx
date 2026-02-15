@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Card from './Card';
 import Button from '../Button';
-import { supabase } from '@/lib/supabaseClient';
 
 export default function JoinGroupCard() {
   const [groupCode, setGroupCode] = useState('');
@@ -21,48 +20,12 @@ export default function JoinGroupCard() {
     setError(null);
     setSuccess(null);
 
-    try {
-      // Get current session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        setError('You must be logged in to join a group');
-        return;
-      }
-
-      // Call API to join project with authorization header
-      const response = await fetch('/api/projects/join', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          projectCode: groupCode,
-          userId: session.user.id,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error('API Error:', data);
-        throw new Error(data.error || 'Failed to join project');
-      }
-
-      setSuccess(`Successfully joined "${data.project.title}"!`);
+    // Demo: mock success after brief delay
+    setTimeout(() => {
+      setSuccess(`Successfully joined "Mock Research Project"!`);
       setGroupCode('');
-      
-      // Refresh the page after 2 seconds to show updated projects
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    } catch (err: any) {
-      console.error('Error joining group:', err);
-      setError(err.message || 'Failed to join group. Please try again.');
-    } finally {
       setIsLoading(false);
-    }
+    }, 800);
   };
 
   return (

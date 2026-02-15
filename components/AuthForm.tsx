@@ -2,42 +2,23 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../lib/supabaseClient";
-import { FaUser, FaLock, FaGithub } from "react-icons/fa";
+import { FaUser, FaLock } from "react-icons/fa";
 import Button from "./Button"
 
 type Mode = "login" | "register";
 
 function GoogleSignInButton() {
-    const [loading, setLoading] = useState(false);
-  
-    const handleGoogleSignIn = async () => {
-      try {
-        setLoading(true);
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
-        
-        if (error) {
-          console.error("Google sign in error:", error);
-          alert("Failed to sign in with Google. Please try again.");
-        }
-      } catch (err) {
-        console.error("Unexpected error:", err);
-        alert("An unexpected error occurred. Please try again.");
-      } finally {
-        setLoading(false);
-      }
+    const router = useRouter();
+
+    const handleGoogleSignIn = () => {
+      // Demo: just redirect to onboarding
+      router.push('/onboarding');
     };
 
     return (
       <button
         onClick={handleGoogleSignIn}
-        disabled={loading}
-        className="flex items-center justify-center gap-3 px-6 py-2.5 bg-ivory border border-lightGray rounded-lg hover:bg-lightGray transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-darkSlateBlue group"
+        className="flex items-center justify-center gap-3 px-6 py-2.5 bg-ivory border border-lightGray rounded-lg hover:bg-lightGray transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 font-medium text-darkSlateBlue group"
         aria-label="Sign in with Google"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -66,44 +47,13 @@ function AuthForm({ mode }: { mode: Mode }) {
     setLoading(true);
     setMessage(null);
 
-    try {
-      if (mode === "register") {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { 
-            data: { full_name: fullName },
-            emailRedirectTo: `${window.location.origin}/auth/callback`
-          },
-        });
-        
-        if (error) throw error;
-        
-        if (data?.user?.identities?.length === 0) {
-          setMessage("This email is already registered. Please login instead.");
-        } else if (data?.user && !data.session) {
-          setMessage("Registration successful! Please check your email to verify your account.");
-        } else {
-          setMessage("Registration successful!");
-          // Use window.location instead of router.push to ensure cookies are synced
-          window.location.href = "/onboarding";
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        setMessage("Signed in successfully");
-        // Use window.location instead of router.push to ensure cookies are synced
+    // Demo: just redirect to onboarding after a brief delay
+    setTimeout(() => {
+      setMessage(mode === "register" ? "Registration successful!" : "Signed in successfully");
+      setTimeout(() => {
         window.location.href = "/onboarding";
-      }
-    } catch (err: any) {
-      console.error("Auth error:", err);
-      setMessage(err.message || String(err));
-    } finally {
-      setLoading(false);
-    }
+      }, 500);
+    }, 800);
   }
 
   return (

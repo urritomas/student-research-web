@@ -1,90 +1,27 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, Avatar, Modal } from '@/components/ui';
 import Button from '@/components/Button';
 import EditProfile from './editProfile';
-import { supabase } from '@/lib/supabaseClient';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  role: string;
-  avatarUrl?: string;
-}
+import { MOCK_STUDENT } from '@/lib/mock-data';
 
 export default function StudentProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  const fetchUserProfile = async () => {
-    try {
-      // Get current authenticated user
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !authUser) {
-        router.push('/login');
-        return;
-      }
-
-      // Fetch user profile from database
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('full_name, email, avatar_url')
-        .eq('id', authUser.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        setUser({
-          name: authUser.email || 'User',
-          email: authUser.email || '',
-          role: 'Student',
-        });
-      } else {
-        setUser({
-          name: profile.full_name || authUser.email || 'User',
-          email: profile.email || authUser.email || '',
-          role: 'Student',
-          avatarUrl: profile.avatar_url || undefined,
-        });
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  const user = {
+    name: MOCK_STUDENT.full_name,
+    email: MOCK_STUDENT.email,
+    role: 'Student',
+    avatarUrl: MOCK_STUDENT.avatar_url,
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
     router.push('/login');
   };
-
-  if (isLoading) {
-    return (
-      <DashboardLayout role="student" user={{ name: 'Loading...', email: '', role: 'Student' }} onLogout={handleLogout}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center space-y-4">
-            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent"></div>
-            <p className="text-neutral-600">Loading profile...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
 
   return (
     <DashboardLayout role="student" user={{ ...user, avatar: user.avatarUrl }} onLogout={handleLogout}>
@@ -118,12 +55,10 @@ export default function StudentProfilePage() {
       </div>
 
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit Profile" size="md">
-        {user && (
-          <EditProfile
-            user={user}
-            onClose={() => setIsEditOpen(false)}
-          />
-        )}
+        <EditProfile
+          user={user}
+          onClose={() => setIsEditOpen(false)}
+        />
       </Modal>
     </DashboardLayout>
   );

@@ -6,8 +6,6 @@ import Button from './Button';
 import Input from './ui/Input';
 import Select from './ui/Select';
 import Avatar from './ui/Avatar';
-import { completeProfile, UserRole, CompleteProfileResult } from '@/lib/completeProfile';
-import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 
 export interface NewAccountConfigModalProps {
@@ -18,6 +16,8 @@ export interface NewAccountConfigModalProps {
   googleDisplayName?: string | null;
   googlePhotoUrl?: string | null;
 }
+
+type UserRole = 'student' | 'teacher';
 
 interface FormData {
   role: UserRole | '';
@@ -146,33 +146,19 @@ export default function NewAccountConfigModal({
 
     setIsSubmitting(true);
 
-    try {
-      const result: CompleteProfileResult = await completeProfile({
-        userId,
-        email: userEmail,
-        displayName: formData.displayName.trim(),
-        role: formData.role as UserRole,
-        avatarFile: avatarFile,
-        googlePhotoUrl: googlePhotoUrl
-      });
-
-      if (result.success && result.redirectPath) {
-        // Success! Redirect to the appropriate dashboard
-        router.push(result.redirectPath);
-        onClose();
+    // Demo: redirect based on role after a brief delay
+    setTimeout(() => {
+      const role = formData.role;
+      if (role === 'student') {
+        router.push('/student');
+      } else if (role === 'teacher') {
+        router.push('/adviser');
       } else {
-        setGeneralError(result.error || 'Failed to complete profile setup');
-        setIsSubmitting(false);
+        router.push('/student');
       }
-    } catch (error) {
-      console.error('Profile completion error:', error);
-      setGeneralError(
-        error instanceof Error 
-          ? error.message 
-          : 'An unexpected error occurred. Please try again.'
-      );
+      onClose();
       setIsSubmitting(false);
-    }
+    }, 800);
   };
 
   const roleOptions = [
