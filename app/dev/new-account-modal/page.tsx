@@ -1,39 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import NewAccountConfigModal from '@/components/NewAccountConfigModal';
 import Button from '@/components/Button';
 import Card from '@/components/ui/Card';
-import { supabase } from '@/lib/supabaseClient';
 
 export default function NewAccountModalDemo() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userId, setUserId] = useState('');
-  const [userEmail, setUserEmail] = useState('');
-  const [googleDisplayName, setGoogleDisplayName] = useState('');
+  const [userId, setUserId] = useState('demo-user-001');
+  const [userEmail, setUserEmail] = useState('demo@university.edu');
+  const [googleDisplayName, setGoogleDisplayName] = useState('Demo User');
   const [googlePhotoUrl, setGooglePhotoUrl] = useState('');
-  const [currentUser, setCurrentUser] = useState<any>(null);
-
-  // Fetch current authenticated user on mount
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUser(user);
-        setUserId(user.id);
-        setUserEmail(user.email || '');
-        
-        // Extract Google profile data if available
-        const displayName = user.user_metadata?.full_name || user.user_metadata?.name || '';
-        const photoUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || '';
-        
-        setGoogleDisplayName(displayName);
-        setGooglePhotoUrl(photoUrl);
-      }
-    };
-    
-    fetchUser();
-  }, []);
 
   const openModal = () => {
     setIsModalOpen(true);
@@ -79,21 +56,6 @@ export default function NewAccountModalDemo() {
             Test the first-time user onboarding flow with different scenarios
           </p>
         </div>
-
-        {/* Current User Info */}
-        {currentUser && (
-          <Card className="p-4 bg-primary-50 border-primary-200">
-            <h3 className="font-semibold text-primary-900 mb-2">
-              Current Authenticated User
-            </h3>
-            <div className="text-sm space-y-1">
-              <p><strong>ID:</strong> {currentUser.id}</p>
-              <p><strong>Email:</strong> {currentUser.email}</p>
-              <p><strong>Display Name:</strong> {googleDisplayName || 'Not set'}</p>
-              <p><strong>Photo URL:</strong> {googlePhotoUrl || 'Not set'}</p>
-            </div>
-          </Card>
-        )}
 
         {/* Test Scenarios */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

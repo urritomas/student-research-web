@@ -1,91 +1,36 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardTitle, CardDescription } from '@/components/ui/Card';
 import JoinGroupCard from '@/components/ui/JoinGroupCard';
 import { FiUsers, FiFolder, FiCalendar, FiTrendingUp } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  role: string;
-  avatarUrl?: string;
-}
+import { MOCK_ADVISER, MOCK_ADVISER_STATS } from '@/lib/mock-data';
 
 export default function AdviserDashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  const fetchUserProfile = async () => {
-    try {
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !authUser) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('full_name, email, avatar_url')
-        .eq('id', authUser.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        setUser({
-          name: authUser.email || 'User',
-          email: authUser.email || '',
-          role: 'Adviser',
-        });
-      } else {
-        setUser({
-          name: profile.full_name || authUser.email || 'User',
-          email: profile.email || authUser.email || '',
-          role: 'Adviser',
-          avatarUrl: profile.avatar_url || undefined,
-        });
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-      setUser({ name: 'User', email: '', role: 'Adviser' });
-    } finally {
-      setIsLoading(false);
-    }
+  const user = {
+    name: MOCK_ADVISER.full_name,
+    email: MOCK_ADVISER.email,
+    role: 'Adviser',
+    avatar: MOCK_ADVISER.avatar_url,
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
     router.push('/login');
   };
 
-  if (isLoading || !user) {
-    return (
-      <DashboardLayout role="adviser" user={{ name: 'Loading...', email: '', role: 'Adviser' }} onLogout={handleLogout}>
-        <div className="flex items-center justify-center h-64">
-          <p>Loading...</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   const stats = [
-    { icon: <FiUsers />, label: 'Total Advisees', value: '24', color: 'bg-accent-100 text-accent-600' },
-    { icon: <FiFolder />, label: 'Active Projects', value: '12', color: 'bg-success-100 text-success-600' },
-    { icon: <FiCalendar />, label: 'Upcoming Defenses', value: '3', color: 'bg-warning-100 text-warning-600' },
-    { icon: <FiTrendingUp />, label: 'Completed Projects', value: '18', color: 'bg-primary-100 text-primary-600' },
+    { icon: <FiUsers />, label: 'Total Advisees', value: String(MOCK_ADVISER_STATS.totalAdvisees), color: 'bg-accent-100 text-accent-600' },
+    { icon: <FiFolder />, label: 'Active Projects', value: String(MOCK_ADVISER_STATS.activeProjects), color: 'bg-success-100 text-success-600' },
+    { icon: <FiCalendar />, label: 'Upcoming Defenses', value: String(MOCK_ADVISER_STATS.upcomingDefenses), color: 'bg-warning-100 text-warning-600' },
+    { icon: <FiTrendingUp />, label: 'Completed Projects', value: String(MOCK_ADVISER_STATS.completedProjects), color: 'bg-primary-100 text-primary-600' },
   ];
 
   return (
-    <DashboardLayout role="adviser" user={{ ...user, avatar: user.avatarUrl }} onLogout={handleLogout}>
+    <DashboardLayout role="adviser" user={user} onLogout={handleLogout}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-primary-700">Welcome back, {user.name}!</h1>

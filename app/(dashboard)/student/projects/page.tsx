@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import EmptyState from '@/components/layout/EmptyState';
@@ -8,163 +8,25 @@ import StatusIcon from '@/components/StatusIcon';
 import Button from '@/components/Button';
 import { FiFolder, FiPlus, FiClock } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  role: string;
-  avatar?: string;
-}
+import { MOCK_STUDENT, MOCK_PROJECTS } from '@/lib/mock-data';
 
 export default function StudentProjectsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  const fetchUserProfile = async () => {
-    try {
-      // Get current authenticated user
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !authUser) {
-        router.push('/login');
-        return;
-      }
-
-      // Fetch user profile from database
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('full_name, email, avatar_url')
-        .eq('id', authUser.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        // Fallback to auth user data if profile fetch fails
-        setUser({
-          name: authUser.email || 'User',
-          email: authUser.email || '',
-          role: 'Student',
-        });
-      } else {
-        setUser({
-          name: profile.full_name || authUser.email || 'User',
-          email: profile.email || authUser.email || '',
-          role: 'Student',
-          avatar: profile.avatar_url || undefined,
-        });
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-      // Fallback user data
-      setUser({
-        name: 'User',
-        email: '',
-        role: 'Student',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const user = {
+    name: MOCK_STUDENT.full_name,
+    email: MOCK_STUDENT.email,
+    role: 'Student',
+    avatar: MOCK_STUDENT.avatar_url,
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
     router.push('/login');
   };
 
-  // Fetch projects from database
-  const [projects, setProjects] = useState<any[]>([]);
-  const [projectsLoading, setProjectsLoading] = useState(true);
-
-  useEffect(() => {
-    if (user) {
-      fetchProjects();
-    }
-  }, [user]);
-
-  const fetchProjects = async () => {
-    try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) return;
-
-      // Fetch projects where user is the creator OR a member
-      const [createdProjects, memberProjects] = await Promise.all([
-        // Projects created by user
-        supabase
-          .from('projects')
-          .select('*')
-          .eq('created_by', authUser.id),
-        
-        // Projects where user is a member
-        supabase
-          .from('project_members')
-          .select(`
-            project_id,
-            role,
-            status,
-            projects (*)
-          `)
-          .eq('user_id', authUser.id)
-          .eq('status', 'accepted')
-      ]);
-
-      if (createdProjects.error) {
-        console.error('Error fetching created projects:', createdProjects.error);
-      }
-
-      if (memberProjects.error) {
-        console.error('Error fetching member projects:', memberProjects.error);
-      }
-
-      // Combine and deduplicate projects
-      const allProjects = [
-        ...(createdProjects.data || []),
-        ...(memberProjects.data?.map((m: any) => m.projects).filter(Boolean) || [])
-      ];
-
-      // Remove duplicates based on project id
-      const uniqueProjects = allProjects.reduce((acc: any[], current: any) => {
-        const exists = acc.find(p => p.id === current.id);
-        if (!exists) {
-          acc.push(current);
-        }
-        return acc;
-      }, []);
-
-      // Sort by created_at
-      uniqueProjects.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-
-      setProjects(uniqueProjects);
-    } catch (error) {
-      console.error('Error loading projects:', error);
-    } finally {
-      setProjectsLoading(false);
-    }
-  };
-
-  if (isLoading || projectsLoading) {
-    return (
-      <DashboardLayout role="student" user={{ name: 'Loading...', email: '', role: 'Student' }} onLogout={handleLogout}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center space-y-4">
-            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent"></div>
-            <p className="text-neutral-600">Loading...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
+  const projects = [...MOCK_PROJECTS].sort((a, b) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   return (
     <DashboardLayout role="student" user={user} onLogout={handleLogout}>

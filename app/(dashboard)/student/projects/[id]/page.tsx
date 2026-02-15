@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
@@ -8,161 +8,26 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/Button';
 import Avatar from '@/components/ui/Avatar';
 import { FiFolder, FiUsers, FiCalendar, FiFileText, FiCopy, FiCheck } from 'react-icons/fi';
-import { supabase } from '@/lib/supabaseClient';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  role: string;
-  avatar?: string;
-}
-
-interface Project {
-  id: string;
-  project_code: string;
-  title: string;
-  description: string;
-  project_type: string;
-  status: string;
-  document_reference?: string;
-  created_at: string;
-  created_by: string;
-}
-
-interface ProjectMember {
-  id: string;
-  role: string;
-  status: string;
-  user_id: string;
-  users: {
-    full_name: string;
-    email: string;
-    avatar_url?: string;
-  } | null;
-}
+import { MOCK_STUDENT, MOCK_PROJECTS, MOCK_PROJECT_MEMBERS } from '@/lib/mock-data';
 
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [project, setProject] = useState<Project | null>(null);
-  const [members, setMembers] = useState<ProjectMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [codeCopied, setCodeCopied] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      // Get authenticated user
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !authUser) {
-        router.push('/login');
-        return;
-      }
-
-      // Fetch user profile
-      const { data: profile } = await supabase
-        .from('users')
-        .select('full_name, email, avatar_url')
-        .eq('id', authUser.id)
-        .single();
-
-      setUser({
-        name: profile?.full_name || authUser.email || 'User',
-        email: profile?.email || authUser.email || '',
-        role: 'Student',
-        avatar: profile?.avatar_url || undefined,
-      });
-
-      // Fetch project details
-      const { data: projectData, error: projectError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', params.id)
-        .single();
-
-      if (projectError) {
-        console.error('Error fetching project:', projectError);
-        router.push('/student/projects');
-        return;
-      }
-
-      setProject(projectData);
-
-      // Fetch project creator
-      const { data: creatorData, error: creatorError } = await supabase
-        .from('users')
-        .select('id, full_name, email, avatar_url')
-        .eq('id', projectData.created_by)
-        .single();
-
-      if (creatorError) {
-        console.error('Error fetching creator:', creatorError);
-      }
-
-      // Fetch project members
-      const { data: membersData, error: membersError } = await supabase
-        .from('project_members')
-        .select(`
-          id,
-          role,
-          status,
-          user_id,
-          users (
-            full_name,
-            email,
-            avatar_url
-          )
-        `)
-        .eq('project_id', params.id)
-        .eq('status', 'accepted');
-
-      if (membersError) {
-        console.error('Error fetching members:', membersError);
-      }
-
-      // Combine creator and members, avoiding duplicates
-      const allMembers: ProjectMember[] = [];
-      
-      // Add creator first with owner role
-      if (creatorData) {
-        allMembers.push({
-          id: 'creator',
-          role: 'owner',
-          status: 'accepted',
-          user_id: creatorData.id,
-          users: {
-            full_name: creatorData.full_name,
-            email: creatorData.email,
-            avatar_url: creatorData.avatar_url,
-          },
-        });
-      }
-
-      // Add other members (excluding the creator if they appear in members)
-      if (membersData) {
-        const otherMembers = (membersData as any as ProjectMember[]).filter(
-          (member) => member.user_id !== projectData.created_by
-        );
-        allMembers.push(...otherMembers);
-      }
-
-      setMembers(allMembers);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  const user = {
+    name: MOCK_STUDENT.full_name,
+    email: MOCK_STUDENT.email,
+    role: 'Student',
+    avatar: MOCK_STUDENT.avatar_url,
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
     router.push('/login');
   };
+
+  const project = MOCK_PROJECTS.find((p) => p.id === params.id) || MOCK_PROJECTS[0];
+  const members = MOCK_PROJECT_MEMBERS;
 
   const copyProjectCode = () => {
     if (project?.project_code) {
@@ -181,23 +46,6 @@ export default function ProjectDetailPage() {
     });
   };
 
-  if (isLoading) {
-    return (
-      <DashboardLayout role="student" user={{ name: 'Loading...', email: '', role: 'Student' }} onLogout={handleLogout}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center space-y-4">
-            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent"></div>
-            <p className="text-neutral-600">Loading project...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!user || !project) {
-    return null;
-  }
-
   return (
     <DashboardLayout role="student" user={user} onLogout={handleLogout}>
       <div className="space-y-6">
@@ -206,7 +54,7 @@ export default function ProjectDetailPage() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-primary-700">{project.title}</h1>
-              <Badge variant={project.status === 'proposal' ? 'warning' : 'primary'}>
+              <Badge variant={project.status === 'Proposal' ? 'warning' : 'primary'}>
                 {project.status}
               </Badge>
             </div>

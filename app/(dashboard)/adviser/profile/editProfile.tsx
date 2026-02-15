@@ -5,8 +5,6 @@ import Button from '@/components/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Avatar from '@/components/ui/Avatar';
-import { updateUserProfile } from '@/lib/completeProfile';
-import { supabase } from '@/lib/supabaseClient';
 
 interface UserProfile {
   name: string;
@@ -33,72 +31,30 @@ export default function EditProfile({ user, onClose }: EditProfileProps) {
     { value: 'busy', label: '🔴 Busy' },
   ];
 
-  // Handle username update
-  const handleUpdate = async () => {
+  const handleUpdate = () => {
     setLoading(true);
-    setError(null);
-
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user logged in');
-
-      // Update both username and avatar URL
-      const result = await updateUserProfile(user.id, { 
-        full_name: name,
-        ...(avatarUrl ? { avatar_url: avatarUrl } : {})
-      });
-
-      console.log('Profile updated:', result);
-      onClose();
-    } catch (err: any) {
-      console.error('Profile update error:', err);
-      setError(err.message || 'Failed to update profile');
-    } finally {
+    // Demo: just close after a short delay
+    setTimeout(() => {
       setLoading(false);
-    }
+      onClose();
+    }, 500);
   };
 
-  // Handle Enter key for username input
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleUpdate();
   };
 
-  // Handle avatar file selection and upload
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setLoading(true);
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user logged in');
-      if (userError) throw userError;
-
-      
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
-
-      
-      const { error: uploadError } = await supabase.storage
-        .from('Profile_pictures')
-        .upload(filePath, file, { upsert: true, cacheControl: '3600' });
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage.from('Profile_pictures').getPublicUrl(filePath);
-      if (!data?.publicUrl) throw new Error('Failed to get public URL');
-
-      setAvatarUrl(data.publicUrl);
-    } catch (err: any) {
-      console.error('Avatar upload error:', err);
-      setError(err.message || 'Failed to upload avatar');
-    } finally {
-      setLoading(false);
-    }
+    // Preview only
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
-  
   const openFilePicker = () => {
     fileInputRef.current?.click();
   };

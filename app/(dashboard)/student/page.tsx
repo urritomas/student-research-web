@@ -1,113 +1,26 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import Button from '@/components/Button';
 import JoinGroupCard from '@/components/ui/JoinGroupCard';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  role: string;
-  avatar?: string;
-}
+import { MOCK_STUDENT, MOCK_DASHBOARD_INVITATIONS } from '@/lib/mock-data';
 
 export default function StudentDashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  const fetchUserProfile = async () => {
-    try {
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !authUser) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('full_name, email, avatar_url')
-        .eq('id', authUser.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        setUser({
-          name: authUser.email || 'User',
-          email: authUser.email || '',
-          role: 'Student',
-        });
-      } else {
-        setUser({
-          name: profile.full_name || authUser.email || 'User',
-          email: profile.email || authUser.email || '',
-          role: 'Student',
-          avatar: profile.avatar_url || undefined,
-        });
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-      setUser({ name: 'User', email: '', role: 'Student' });
-    } finally {
-      setIsLoading(false);
-    }
+  const user = {
+    name: MOCK_STUDENT.full_name,
+    email: MOCK_STUDENT.email,
+    role: 'Student',
+    avatar: MOCK_STUDENT.avatar_url,
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
     router.push('/login');
   };
-
-  // Mock invitations data
-  const invitations = [
-    {
-      id: 1,
-      title: 'Advanced Research Methods',
-      invitedBy: 'Dr. Sarah Johnson',
-      description: 'Research project focusing on quantitative analysis and statistical modeling',
-      icon: '📊',
-    },
-    {
-      id: 2,
-      title: 'Machine Learning Fundamentals',
-      invitedBy: 'Prof. Michael Chen',
-      description: 'Introduction to ML algorithms and their applications in research',
-      icon: '🤖',
-    },
-    {
-      id: 3,
-      title: 'Literature Review Workshop',
-      invitedBy: 'Dr. Emily Martinez',
-      description: 'Learn systematic approaches to conducting comprehensive literature reviews',
-      icon: '📚',
-    },
-  ];
-
-  if (isLoading) {
-    return (
-      <DashboardLayout role="student" user={{ name: 'Loading...', email: '', role: 'Student' }} onLogout={handleLogout}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center space-y-4">
-            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent"></div>
-            <p className="text-neutral-600">Loading...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
 
   return (
     <DashboardLayout role="student" user={user} onLogout={handleLogout}>
@@ -146,7 +59,7 @@ export default function StudentDashboardPage() {
             </div>
 
             <div className="space-y-3">
-              {invitations.map((invitation) => (
+              {MOCK_DASHBOARD_INVITATIONS.map((invitation) => (
                 <div
                   key={invitation.id}
                   className="p-4 border border-neutral-200 rounded-lg hover:border-skyBlue/50 hover:bg-skyBlue/5 transition-all group"
@@ -157,10 +70,10 @@ export default function StudentDashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-darkSlateBlue text-sm mb-0.5">
-                        {invitation.title}
+                        {invitation.projectTitle}
                       </h3>
                       <p className="text-xs text-neutral-600 mb-2">
-                        Invited by {invitation.invitedBy}
+                        Invited by {invitation.from}
                       </p>
                       <p className="text-xs text-neutral-500 line-clamp-2">
                         {invitation.description}

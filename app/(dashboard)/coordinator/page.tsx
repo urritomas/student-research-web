@@ -5,27 +5,26 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardTitle, CardDescription } from '@/components/ui/Card';
 import { FiUsers, FiFolder, FiCalendar, FiSettings } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { MOCK_COORDINATOR, MOCK_COORDINATOR_STATS } from '@/lib/mock-data';
 
 export default function CoordinatorDashboardPage() {
   const router = useRouter();
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
     router.push('/login');
   };
 
   const user = {
-    name: 'Prof. Michael Anderson',
-    email: 'michael.anderson@example.com',
+    name: MOCK_COORDINATOR.full_name,
+    email: MOCK_COORDINATOR.email,
     role: 'Coordinator',
   };
 
   const stats = [
-    { icon: <FiFolder />, label: 'Total Projects', value: '156', color: 'bg-primary-100 text-primary-600' },
-    { icon: <FiUsers />, label: 'Active Students', value: '420', color: 'bg-accent-100 text-accent-600' },
-    { icon: <FiUsers />, label: 'Faculty Advisers', value: '32', color: 'bg-success-100 text-success-600' },
-    { icon: <FiCalendar />, label: 'Defenses This Month', value: '18', color: 'bg-warning-100 text-warning-600' },
+    { icon: <FiFolder />, label: 'Total Projects', value: String(MOCK_COORDINATOR_STATS.totalProjects), color: 'bg-primary-100 text-primary-600' },
+    { icon: <FiUsers />, label: 'Active Students', value: String(MOCK_COORDINATOR_STATS.activeStudents), color: 'bg-accent-100 text-accent-600' },
+    { icon: <FiUsers />, label: 'Faculty Advisers', value: String(MOCK_COORDINATOR_STATS.facultyAdvisers), color: 'bg-success-100 text-success-600' },
+    { icon: <FiCalendar />, label: 'Defenses This Month', value: String(MOCK_COORDINATOR_STATS.defensesThisMonth), color: 'bg-warning-100 text-warning-600' },
   ];
 
   return (

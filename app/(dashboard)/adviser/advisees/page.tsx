@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import EmptyState from '@/components/layout/EmptyState';
@@ -8,132 +8,25 @@ import StatusIcon from '@/components/StatusIcon';
 import Button from '@/components/Button';
 import { FiFolder, FiPlus } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  role: string;
-  avatar?: string;
-}
+import { MOCK_ADVISER, MOCK_ADVISED_PROJECTS } from '@/lib/mock-data';
 
 export default function AdviserAdviseesPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [projectsLoading, setProjectsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  const fetchUserProfile = async () => {
-    try {
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !authUser) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('full_name, email, avatar_url')
-        .eq('id', authUser.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        setUser({
-          name: authUser.email || 'User',
-          email: authUser.email || '',
-          role: 'Adviser',
-        });
-      } else {
-        setUser({
-          name: profile.full_name || authUser.email || 'User',
-          email: profile.email || authUser.email || '',
-          role: 'Adviser',
-          avatar: profile.avatar_url || undefined,
-        });
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-      setUser({
-        name: 'User',
-        email: '',
-        role: 'Adviser',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const user = {
+    name: MOCK_ADVISER.full_name,
+    email: MOCK_ADVISER.email,
+    role: 'Adviser',
+    avatar: MOCK_ADVISER.avatar_url,
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
     router.push('/login');
   };
 
-  useEffect(() => {
-    if (user) {
-      fetchProjects();
-    }
-  }, [user]);
-
-  const fetchProjects = async () => {
-    try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) return;
-
-      // Fetch projects where adviser is a member
-      const { data: memberProjects, error: memberError } = await supabase
-        .from('project_members')
-        .select(`
-          project_id,
-          role,
-          status,
-          projects (*)
-        `)
-        .eq('user_id', authUser.id)
-        .eq('status', 'accepted')
-        .eq('role', 'adviser');
-
-      if (memberError) {
-        console.error('Error fetching projects:', memberError);
-      }
-
-      // Extract and sort projects
-      const allProjects = memberProjects?.map((m: any) => m.projects).filter(Boolean) || [];
-      
-      allProjects.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-
-      setProjects(allProjects);
-    } catch (error) {
-      console.error('Error loading projects:', error);
-    } finally {
-      setProjectsLoading(false);
-    }
-  };
-
-  if (isLoading || projectsLoading) {
-    return (
-      <DashboardLayout role="adviser" user={{ name: 'Loading...', email: '', role: 'Adviser' }} onLogout={handleLogout}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center space-y-4">
-            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent"></div>
-            <p className="text-neutral-600">Loading...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
+  const projects = [...MOCK_ADVISED_PROJECTS].sort((a, b) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   return (
     <DashboardLayout role="adviser" user={user} onLogout={handleLogout}>
