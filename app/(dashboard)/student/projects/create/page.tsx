@@ -16,6 +16,15 @@ interface UserProfile {
   avatar?: string;
 }
 
+interface PersonRole {
+  role: string;
+  name: string;
+};
+
+const emptyPerson: PersonRole = {
+  role: '',
+  name: '',
+};
 
 export default function CreateProjectPage() {
   const router = useRouter();
@@ -28,17 +37,17 @@ export default function CreateProjectPage() {
   const [abstract, setAbstract] = useState('');
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordInput, setKeywordInput] = useState('');
-  const [contributorRole, setContributorRole] = useState('');
+  const [contributors, setContributors] = useState<PersonRole[]>([]);
   const [program, setProgram] = useState('');
   const [course, setCourse] = useState('');
   const [section, setSection] = useState('');
-  const [adviserRole, setAdviserRole] = useState('');
+  const [advisers, setAdvisers] = useState<PersonRole[]>([
+    {role: 'Adviser', name: 'rico'}, 
+    {role: 'Co-adviser', name: 'kyrr'}
+  ]);
   const [researchType, setResearchType] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-
-  const [contributors, setContributors] = useState<string[]>([]);
-  const [advisers, setAdvisers] = useState<string[]>(['rico', 'joshua']);
 
   // Error state
   const [errors, setErrors] = useState<{
@@ -95,8 +104,8 @@ export default function CreateProjectPage() {
   };
 
   useEffect(() => {
-    if (user && !contributors.includes(user.name)) {
-      setContributors([user.name, ...contributors])
+    if (user && !contributors.some(c => c.name === user.name && c.role === user.role)) {
+      setContributors([user, ...contributors])
     }
   }, [user])
   
@@ -175,6 +184,30 @@ export default function CreateProjectPage() {
     setSelectedFile(file);
     setErrors({ ...errors, file: undefined });
   };
+
+  const updateContributor = (
+    index: number, 
+    field: keyof PersonRole, 
+    value: string
+  ) => {
+    setContributors((prev) => 
+      prev.map((c, i) => 
+        i === index ? { ...c, [field]: value } : c
+      )
+    )
+  }
+  
+  const updateAdviser = (
+    index: number, 
+    field: keyof PersonRole, 
+    value: string
+  ) => {
+    setAdvisers((prev) => 
+      prev.map((a, i) => 
+        i === index ? { ...a, [field]: value } : a
+      )
+    )
+  }
 
   const removeContributor = (index: number) => {
     const updatedContributorList = contributors.filter((_, i) => i !== index)
@@ -426,8 +459,8 @@ export default function CreateProjectPage() {
                       <Select 
                         label=""
                         placeholder="Select Role"
-                        value={contributorRole}
-                        onChange={(e) => setContributorRole(e.target.value)}
+                        value={contributor.role}
+                        onChange={(e) => updateContributor(index, 'role', e.target.value)}
                         options={[
                           { value: 'Author', label: 'Author'},
                           { value: 'Editor', label: 'Editor'},
@@ -437,7 +470,7 @@ export default function CreateProjectPage() {
                       />
                     </div>
                     <div className="flex items-center text-xl">
-                      <p>{contributor}</p>
+                      <p>{contributor.name}</p>
                     </div>
                   </div>
                   <button onClick={() => removeContributor(index)}>
@@ -498,8 +531,8 @@ export default function CreateProjectPage() {
                         <Select 
                           label=""
                           placeholder="Select Role"
-                          value={adviserRole}
-                          onChange={(e) => setAdviserRole(e.target.value)}
+                          value={adviser.role}
+                          onChange={(e) => updateAdviser(index, 'role', e.target.value)}
                           options={[
                             { value: 'Adviser', label: 'Adviser'},
                             { value: 'Co-adviser', label: 'Co-adviser'}
@@ -507,7 +540,7 @@ export default function CreateProjectPage() {
                         />
                       </div>
                       <div className="flex items-center text-xl">
-                        <p>{adviser}</p>
+                        <p>{adviser.name}</p>
                       </div>
                     </div>
                     <button onClick={() => removeAdviser(index)}>
