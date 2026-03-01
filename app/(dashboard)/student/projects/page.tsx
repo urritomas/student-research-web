@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import EmptyState from '@/components/layout/EmptyState';
@@ -8,25 +8,34 @@ import StatusIcon from '@/components/StatusIcon';
 import Button from '@/components/Button';
 import { FiFolder, FiPlus, FiClock } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import { MOCK_STUDENT, MOCK_PROJECTS } from '@/lib/mock-data';
+import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
+import { getMyProjects, type Project } from '@/lib/api/projects';
 
 export default function StudentProjectsPage() {
   const router = useRouter();
+  const { user, isLoading: profileLoading, handleLogout } = useDashboardUser('Student');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const user = {
-    name: MOCK_STUDENT.full_name,
-    email: MOCK_STUDENT.email,
-    role: 'Student',
-    avatar: MOCK_STUDENT.avatar_url,
-  };
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      const res = await getMyProjects();
+      if (!cancelled) {
+        setProjects(
+          (res.data || []).sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )
+        );
+        setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
-  const handleLogout = () => {
-    router.push('/login');
-  };
-
-  const projects = [...MOCK_PROJECTS].sort((a, b) =>
-    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+  const isLoading = profileLoading || loading;
 
   return (
     <DashboardLayout role="student" user={user} onLogout={handleLogout}>
@@ -47,7 +56,11 @@ export default function StudentProjectsPage() {
         </div>
 
         {/* Projects Grid */}
-        {projects.length > 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <p className="text-neutral-500">Loading projects...</p>
+          </div>
+        ) : projects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
               <Card 

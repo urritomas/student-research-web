@@ -5,20 +5,12 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardTitle, CardDescription } from '@/components/ui/Card';
 import { FiUsers, FiFolder, FiCalendar, FiSettings } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import { MOCK_COORDINATOR, MOCK_COORDINATOR_STATS } from '@/lib/mock-data';
+import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
+import { MOCK_COORDINATOR_STATS } from '@/lib/mock-data';
 
 export default function CoordinatorDashboardPage() {
   const router = useRouter();
-
-  const handleLogout = () => {
-    router.push('/login');
-  };
-
-  const user = {
-    name: MOCK_COORDINATOR.full_name,
-    email: MOCK_COORDINATOR.email,
-    role: 'Coordinator',
-  };
+  const { user, handleLogout } = useDashboardUser('Coordinator');
 
   const stats = [
     { icon: <FiFolder />, label: 'Total Projects', value: String(MOCK_COORDINATOR_STATS.totalProjects), color: 'bg-primary-100 text-primary-600' },

@@ -4,6 +4,7 @@ import React from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
+import { SidebarProvider } from './SidebarContext';
 
 export interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -19,25 +20,21 @@ export interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, role, user, onLogout }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen bg-neutral-50 flex">
-      {/* Sidebar */}
-      <Sidebar role={role} />
+    <SidebarProvider>
+      <div className="h-screen bg-neutral-50 flex overflow-hidden">
+        <Sidebar role={role} />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <Header user={user} onLogout={onLogout} />
+        <div className="flex-1 flex flex-col min-w-0">
+          <Header user={user} onLogout={onLogout} />
 
-        {/* Page Content */}
-        <main className="flex-1 p-6 overflow-auto">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
-        </main>
-
-        {/* Footer */}
-        <Footer />
+          <main className="flex-1 overflow-y-auto p-6">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
+            <Footer />
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

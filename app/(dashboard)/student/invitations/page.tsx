@@ -8,21 +8,12 @@ import Button from '@/components/Button';
 import { FiMail, FiCheck, FiX } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import EmptyState from '@/components/layout/EmptyState';
-import { MOCK_STUDENT, MOCK_INVITATIONS_PAGE } from '@/lib/mock-data';
+import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
+import { MOCK_INVITATIONS_PAGE } from '@/lib/mock-data';
 
 export default function StudentInvitationsPage() {
   const router = useRouter();
-
-  const user = {
-    name: MOCK_STUDENT.full_name,
-    email: MOCK_STUDENT.email,
-    role: 'Student',
-    avatar: MOCK_STUDENT.avatar_url,
-  };
-
-  const handleLogout = () => {
-    router.push('/login');
-  };
+  const { user, handleLogout } = useDashboardUser('Student');
 
   const invitations = MOCK_INVITATIONS_PAGE;
 
