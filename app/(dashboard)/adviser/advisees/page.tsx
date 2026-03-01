@@ -8,19 +8,19 @@ import StatusIcon from '@/components/StatusIcon';
 import Button from '@/components/Button';
 import { FiFolder, FiPlus } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import { MOCK_ADVISER, MOCK_ADVISED_PROJECTS } from '@/lib/mock-data';
+import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { MOCK_ADVISED_PROJECTS } from '@/lib/mock-data';
 
 export default function AdviserAdviseesPage() {
   const router = useRouter();
+  const { user: profile } = useUserProfile();
 
-  const user = {
-    name: MOCK_ADVISER.full_name,
-    email: MOCK_ADVISER.email,
-    role: 'Adviser',
-    avatar: MOCK_ADVISER.avatar_url,
-  };
+  const user = profile
+    ? { name: profile.name, email: profile.email, role: profile.role, avatar: profile.avatar }
+    : { name: '', email: '', role: 'Adviser', avatar: undefined };
 
   const handleLogout = () => {
+    document.cookie = 'session_token=; path=/; max-age=0';
     router.push('/login');
   };
 

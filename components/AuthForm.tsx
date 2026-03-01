@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaUser, FaLock } from "react-icons/fa";
 import Button from "./Button"
-import { login, register, oAuthSignIn } from "@/lib/api/auth";
+import { login, register, oAuthSignIn, resendVerification } from "@/lib/api/auth";
 
 type Mode = "login" | "register";
 
@@ -42,6 +42,8 @@ function AuthForm({ mode }: { mode: Mode }) {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -60,7 +62,6 @@ function AuthForm({ mode }: { mode: Mode }) {
     setLoading(true);
     setMessage(null);
 
-    // Demo: just redirect to onboarding after a brief delay
     try {
       const result = mode === "register"
         ? await register({ email, password, full_name: fullName })
@@ -72,13 +73,18 @@ function AuthForm({ mode }: { mode: Mode }) {
         return;
       }
 
+      if (result.data?.pending) {
+        setPendingVerification(true);
+        setMessage(result.data.message || 'Please check your email to verify your account.');
+        setLoading(false);
+        return;
+      }
+
       if (result.data?.token) {
         document.cookie = `session_token=${encodeURIComponent(result.data.token)}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
       }
 
       setMessage(mode === "register" ? "Registration successful!" : "Signed in successfully");
-      // After sign in / register, send to centralized resolver
-      // which will inspect the loaded profile and route accordingly.
       setTimeout(() => {
         window.location.href = "/auth/continue";
       }, 200);
@@ -87,6 +93,68 @@ function AuthForm({ mode }: { mode: Mode }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleResend() {
+    if (resendCooldown > 0) return;
+    setLoading(true);
+    const res = await resendVerification(email);
+    setLoading(false);
+    if (res.error) {
+      setMessage(res.error);
+    } else {
+      setMessage(res.data?.message || 'Verification email resent!');
+      setResendCooldown(60);
+      const interval = setInterval(() => {
+        setResendCooldown(prev => {
+          if (prev <= 1) { clearInterval(interval); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+  }
+
+  if (pendingVerification) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 border border-lightGray text-center space-y-6">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-crimsonRed/10 rounded-full">
+            <svg className="w-7 h-7 text-crimsonRed" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-darkSlateBlue">Check Your Email</h2>
+          <p className="text-neutral-600">
+            We sent a verification link to <span className="font-semibold text-darkSlateBlue">{email}</span>.
+            Click the link in the email to verify your account.
+          </p>
+          {message && (
+            <div className={`p-3 rounded-lg text-sm font-medium border ${
+              message.includes('error') || message.includes('Failed') || message.includes('failed')
+                ? 'bg-crimsonRed/10 text-crimsonRed border-crimsonRed/30'
+                : 'bg-mutedGreen/10 text-mutedGreen border-mutedGreen/30'
+            }`}>
+              {message}
+            </div>
+          )}
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={handleResend}
+              disabled={loading || resendCooldown > 0}
+              className="w-full py-2.5 bg-neutral-100 text-darkSlateBlue font-medium rounded-lg hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Verification Email'}
+            </button>
+            <button
+              onClick={() => { setPendingVerification(false); setMessage(null); }}
+              className="w-full py-2.5 text-neutral-500 font-medium text-sm hover:text-darkSlateBlue transition-colors"
+            >
+              Back to {mode === 'register' ? 'Register' : 'Login'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
