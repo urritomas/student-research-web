@@ -3,12 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card, Input, Select } from '@/components/ui';
+import { Card, Input, Select, Avatar } from '@/components/ui';
 import Button from '@/components/Button';
+import UserSearchModal from '@/components/UserSearchModal';
 import { FiUpload, FiX } from 'react-icons/fi';
 import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
 import { createProject } from '@/lib/api/projects';
+import type { SearchUserResult } from '@/lib/api/users';
 
 export default function CreateProjectPage() {
   const router = useRouter();
@@ -28,9 +30,11 @@ export default function CreateProjectPage() {
   const [researchType, setResearchType] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isContributorModalOpen, setIsContributorModalOpen] = useState(false);
+  const [isAdviserModalOpen, setIsAdviserModalOpen] = useState(false);
 
-  const [contributors, setContributors] = useState<string[]>([]);
-  const [advisers, setAdvisers] = useState<string[]>(['rico', 'joshua']);
+  const [contributors, setContributors] = useState<SearchUserResult[]>([]);
+  const [advisers, setAdvisers] = useState<SearchUserResult[]>([]);
 
   // Error state
   const [errors, setErrors] = useState<{
@@ -42,8 +46,13 @@ export default function CreateProjectPage() {
   }>({});
 
   useEffect(() => {
-    if (!contributors.includes(user.name)) {
-      setContributors([user.name, ...contributors]);
+    if (user.name && !contributors.find((c) => c.full_name === user.name)) {
+      setContributors([{
+        id: '',
+        email: '',
+        full_name: user.name,
+        role: 'student',
+      }]);
     }
   }, []);
 
@@ -119,18 +128,26 @@ export default function CreateProjectPage() {
   };
 
   const removeContributor = (index: number) => {
-    const updatedContributorList = contributors.filter((_, i) => i !== index)
     if (contributors.length > 1) {
-      setContributors(updatedContributorList)
+      setContributors(contributors.filter((_, i) => i !== index));
     } 
   }
 
   const removeAdviser = (index: number) => {
-    const updatedAdviserList = advisers.filter((_, i) => i !== index)
-    if (advisers.length > 1) {
-      setAdvisers(updatedAdviserList)
-    }
+    setAdvisers(advisers.filter((_, i) => i !== index));
   }
+
+  const handleAddContributor = (user: SearchUserResult) => {
+    if (!contributors.find((c) => c.id === user.id)) {
+      setContributors([...contributors, user]);
+    }
+  };
+
+  const handleAddAdviser = (user: SearchUserResult) => {
+    if (!advisers.find((a) => a.id === user.id)) {
+      setAdvisers([...advisers, user]);
+    }
+  };
 
   const handleKeywordInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -336,8 +353,8 @@ export default function CreateProjectPage() {
               </label>
               <ol>
                 {contributors.map((contributor, index) => (
-                  <li key={index} className="flex justify-between mb-2">
-                  <div className="flex gap-4">
+                  <li key={contributor.id || index} className="flex justify-between mb-2">
+                  <div className="flex gap-4 items-center">
                     <div className="w-40">
                       <Select 
                         label=""
@@ -352,11 +369,15 @@ export default function CreateProjectPage() {
                         ]}
                       />
                     </div>
-                    <div className="flex items-center text-xl">
-                      <p>{contributor}</p>
+                    <Avatar src={contributor.avatar_url} name={contributor.full_name} size="sm" />
+                    <div>
+                      <p className="text-base font-medium">{contributor.full_name}</p>
+                      {contributor.email && (
+                        <p className="text-xs text-neutral-500">{contributor.email}</p>
+                      )}
                     </div>
                   </div>
-                  <button onClick={() => removeContributor(index)}>
+                  <button type="button" onClick={() => removeContributor(index)}>
                     <FaRegTrashAlt className="text-gray-500 text-xl"/>
                   </button>
                 </li>
@@ -368,7 +389,7 @@ export default function CreateProjectPage() {
                   size='sm'
                   leftIcon=<FaPlusCircle/>
                   variant="ghost"
-                  onClick={() => console.log('')}
+                  onClick={() => setIsContributorModalOpen(true)}
                   disabled={isSubmitting}
                   className="w-full mt-2"
                 >
@@ -408,8 +429,8 @@ export default function CreateProjectPage() {
               </label>
               <ol>
                 {advisers.map((adviser, index) => (
-                  <li key={index} className="flex justify-between gap-4 mb-2">
-                    <div className="flex gap-4">
+                  <li key={adviser.id || index} className="flex justify-between gap-4 mb-2">
+                    <div className="flex gap-4 items-center">
                       <div className="w-40">
                         <Select 
                           label=""
@@ -422,11 +443,15 @@ export default function CreateProjectPage() {
                           ]}
                         />
                       </div>
-                      <div className="flex items-center text-xl">
-                        <p>{adviser}</p>
+                      <Avatar src={adviser.avatar_url} name={adviser.full_name} size="sm" />
+                      <div>
+                        <p className="text-base font-medium">{adviser.full_name}</p>
+                        {adviser.email && (
+                          <p className="text-xs text-neutral-500">{adviser.email}</p>
+                        )}
                       </div>
                     </div>
-                    <button onClick={() => removeAdviser(index)}>
+                    <button type="button" onClick={() => removeAdviser(index)}>
                       <FaRegTrashAlt className="text-gray-500 text-xl"/>
                     </button>
                   </li>
@@ -437,7 +462,7 @@ export default function CreateProjectPage() {
                 size='sm'
                 leftIcon=<FaPlusCircle/>
                 variant="ghost"
-                onClick={() => console.log("")}
+                onClick={() => setIsAdviserModalOpen(true)}
                 disabled={isSubmitting}
                 className="w-full mt-2"
               >
@@ -556,6 +581,24 @@ export default function CreateProjectPage() {
           </form>
         </Card>
       </div>
+
+      <UserSearchModal
+        isOpen={isContributorModalOpen}
+        onClose={() => setIsContributorModalOpen(false)}
+        onSelect={handleAddContributor}
+        role="student"
+        title="Invite Contributor"
+        excludeIds={contributors.map((c) => c.id).filter(Boolean)}
+      />
+
+      <UserSearchModal
+        isOpen={isAdviserModalOpen}
+        onClose={() => setIsAdviserModalOpen(false)}
+        onSelect={handleAddAdviser}
+        role="adviser"
+        title="Invite Adviser"
+        excludeIds={advisers.map((a) => a.id).filter(Boolean)}
+      />
     </DashboardLayout>
   );
 }

@@ -8,6 +8,8 @@ export type { BadgeProps, BadgeVariant, BadgeSize } from './Badge';
 export { default as Card, CardHeader, CardTitle, CardDescription, CardFooter } from './Card';
 export type { CardProps } from './Card';
 
+export { default as CopyableEmail } from './CopyableEmail';
+
 export { default as Dropdown } from './Dropdown';
 export type { DropdownProps, DropdownItem } from './Dropdown';
 

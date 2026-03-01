@@ -23,6 +23,7 @@ export interface Project {
   program?: string;
   course?: string;
   section?: string;
+  member_role?: string;
 }
 
 export interface ProjectMember {
@@ -59,6 +60,23 @@ export interface JoinProjectResult {
   error?: string;
 }
 
+export interface Invitation {
+  id: string;
+  project_id: string;
+  role: string;
+  status: string;
+  invited_at: string;
+  project_title: string;
+  project_code: string;
+  invited_by_name: string;
+  invited_by_email: string;
+}
+
+export interface InvitePayload {
+  userId: string;
+  role?: string;
+}
+
 // ─── API calls ──────────────────────────────────────────────────────────────
 
 /** Fetch all projects the current user is a member of or created. */
@@ -92,10 +110,8 @@ export async function createProject(payload: CreateProjectPayload) {
 }
 
 /** Join a project using a project code. */
-export async function joinProject(payload: JoinProjectPayload): Promise<JoinProjectResult> {
-  const { data, error } = await post<JoinProjectResult>('/projects/join', payload);
-  if (error) return { success: false, error };
-  return data ?? { success: false, error: 'No response from server' };
+export async function joinProject(payload: JoinProjectPayload) {
+  return post<JoinProjectResult>('/projects/join', payload);
 }
 
 /** Fetch projects the current user advises. */
@@ -108,4 +124,27 @@ export function getProjectOwner(projectId: string) {
   return get<{ id: string; full_name: string; email: string; avatar_url?: string }>(
     `/projects/${projectId}/owner`,
   );
+}
+
+/** Invite a user to a project. */
+export function inviteToProject(projectId: string, payload: InvitePayload) {
+  return post<{ success: boolean; message: string }>(`/projects/${projectId}/invite`, payload);
+}
+
+/** Fetch the current user's pending invitations. */
+export function getMyInvitations() {
+  return get<Invitation[]>('/projects/invitations');
+}
+
+/** Respond to an invitation (accept or decline). */
+export function respondToInvitation(invitationId: string, accept: boolean) {
+  return post<{ success: boolean; status: string }>(
+    `/projects/invitations/${invitationId}/respond`,
+    { accept },
+  );
+}
+
+/** Fetch pending invitations for a specific project. */
+export function getProjectInvitations(projectId: string) {
+  return get<ProjectMember[]>(`/projects/${projectId}/invitations`);
 }
