@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
@@ -8,26 +8,37 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/Button';
 import Avatar from '@/components/ui/Avatar';
 import { FiFolder, FiUsers, FiCalendar, FiFileText, FiCopy, FiCheck } from 'react-icons/fi';
-import { MOCK_STUDENT, MOCK_PROJECTS, MOCK_PROJECT_MEMBERS } from '@/lib/mock-data';
+import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
+import { getProject, getProjectMembers, type Project, type ProjectMember } from '@/lib/api/projects';
 
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [codeCopied, setCodeCopied] = useState(false);
+  const { user, handleLogout } = useDashboardUser('Student');
 
-  const user = {
-    name: MOCK_STUDENT.full_name,
-    email: MOCK_STUDENT.email,
-    role: 'Student',
-    avatar: MOCK_STUDENT.avatar_url,
-  };
+  const [project, setProject] = useState<Project | null>(null);
+  const [members, setMembers] = useState<ProjectMember[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleLogout = () => {
-    router.push('/login');
-  };
-
-  const project = MOCK_PROJECTS.find((p) => p.id === params.id) || MOCK_PROJECTS[0];
-  const members = MOCK_PROJECT_MEMBERS;
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!params.id) return;
+      setLoading(true);
+      const [projRes, membersRes] = await Promise.all([
+        getProject(params.id as string),
+        getProjectMembers(params.id as string),
+      ]);
+      if (!cancelled) {
+        setProject(projRes.data || null);
+        setMembers(membersRes.data || []);
+        setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [params.id]);
 
   const copyProjectCode = () => {
     if (project?.project_code) {
@@ -46,6 +57,16 @@ export default function ProjectDetailPage() {
     });
   };
 
+  if (loading || !project) {
+    return (
+      <DashboardLayout role="student" user={user} onLogout={handleLogout}>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-neutral-500">{loading ? 'Loading project...' : 'Project not found'}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout role="student" user={user} onLogout={handleLogout}>
       <div className="space-y-6">
@@ -54,11 +75,11 @@ export default function ProjectDetailPage() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-primary-700">{project.title}</h1>
-              <Badge variant={project.status === 'Proposal' ? 'warning' : 'primary'}>
+              <Badge variant={project.status === 'draft' ? 'warning' : 'primary'}>
                 {project.status}
               </Badge>
             </div>
-            <p className="text-neutral-600">{project.description}</p>
+            <p className="text-neutral-600">{project.description || project.abstract}</p>
           </div>
           <Button
             variant="outline"
@@ -79,7 +100,7 @@ export default function ProjectDetailPage() {
             </CardHeader>
             <div className="mt-4">
               <div className="flex items-center gap-2">
-                <code className="flex-1 bg-neutral-100 px-3 py-2 rounded font-mono text-sm">
+                <code className="flex-1 bg-neutral-100 px-3 py-2 rounded font-mono text-sm break-all">
                   {project.project_code}
                 </code>
                 <Button
@@ -93,13 +114,19 @@ export default function ProjectDetailPage() {
             </div>
           </Card>
 
-          {/* Project Type */}
+          {/* Project Type & Standard */}
           <Card>
             <CardHeader>
               <FiFileText className="text-2xl text-accent-500 mb-2" />
-              <CardTitle>Project Type</CardTitle>
+              <CardTitle>Project Details</CardTitle>
             </CardHeader>
-            <p className="mt-4 text-neutral-700 capitalize">{project.project_type}</p>
+            <div className="mt-4 space-y-2 text-neutral-700">
+              <p><span className="font-medium">Type:</span> <span className="capitalize">{project.project_type}</span></p>
+              <p><span className="font-medium">Standard:</span> <span className="uppercase">{project.paper_standard}</span></p>
+              {project.program && <p><span className="font-medium">Program:</span> {project.program}</p>}
+              {project.course && <p><span className="font-medium">Course:</span> {project.course}</p>}
+              {project.section && <p><span className="font-medium">Section:</span> {project.section}</p>}
+            </div>
           </Card>
 
           {/* Created Date */}
@@ -111,6 +138,20 @@ export default function ProjectDetailPage() {
             <p className="mt-4 text-neutral-700">{formatDate(project.created_at)}</p>
           </Card>
         </div>
+
+        {/* Keywords */}
+        {project.keywords && project.keywords.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Keywords</CardTitle>
+            </CardHeader>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {project.keywords.map((keyword, idx) => (
+                <Badge key={idx} variant="default">{keyword}</Badge>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* Document Reference */}
         {project.document_reference && (
@@ -155,7 +196,7 @@ export default function ProjectDetailPage() {
                   <div
                     key={member.id}
                     className={`flex items-center gap-4 p-3 border rounded-lg transition-colors ${
-                      member.role === 'owner'
+                      member.role === 'leader'
                         ? 'border-primary-300 bg-primary-50/50'
                         : 'border-neutral-200 hover:bg-neutral-50'
                     }`}
@@ -170,16 +211,16 @@ export default function ProjectDetailPage() {
                         <h4 className="font-semibold text-neutral-900">
                           {member.users?.full_name || 'Unknown User'}
                         </h4>
-                        {member.role === 'owner' && (
+                        {member.role === 'leader' && (
                           <span className="text-xs text-primary-600 font-medium">
-                            (Owner)
+                            (Leader)
                           </span>
                         )}
                       </div>
                       <p className="text-sm text-neutral-600">{member.users?.email}</p>
                     </div>
                     <Badge variant={
-                      member.role === 'owner' ? 'primary' :
+                      member.role === 'leader' ? 'primary' :
                       member.role === 'adviser' ? 'success' : 'default'
                     }>
                       {member.role}

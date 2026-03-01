@@ -7,21 +7,12 @@ import Badge from '@/components/ui/Badge';
 import { FiCalendar, FiClock, FiMapPin } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import EmptyState from '@/components/layout/EmptyState';
-import { MOCK_STUDENT, MOCK_DEFENSES } from '@/lib/mock-data';
+import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
+import { MOCK_DEFENSES } from '@/lib/mock-data';
 
 export default function StudentDefensesPage() {
   const router = useRouter();
-
-  const user = {
-    name: MOCK_STUDENT.full_name,
-    email: MOCK_STUDENT.email,
-    role: 'Student',
-    avatar: MOCK_STUDENT.avatar_url,
-  };
-
-  const handleLogout = () => {
-    router.push('/login');
-  };
+  const { user, handleLogout } = useDashboardUser('Student');
 
   const defenses = MOCK_DEFENSES;
 

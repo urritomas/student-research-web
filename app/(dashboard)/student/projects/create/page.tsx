@@ -7,18 +7,13 @@ import { Card, Input, Select } from '@/components/ui';
 import Button from '@/components/Button';
 import { FiUpload, FiX } from 'react-icons/fi';
 import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
-import { MOCK_STUDENT } from '@/lib/mock-data';
+import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
+import { createProject } from '@/lib/api/projects';
 
 export default function CreateProjectPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const user = {
-    name: MOCK_STUDENT.full_name,
-    email: MOCK_STUDENT.email,
-    role: 'Student',
-    avatar: MOCK_STUDENT.avatar_url,
-  };
+  const { user, handleLogout } = useDashboardUser('Student');
 
   // Form state
   const [title, setTitle] = useState('');
@@ -52,9 +47,6 @@ export default function CreateProjectPage() {
     }
   }, []);
 
-  const handleLogout = () => {
-    router.push('/login');
-  };
 
   const validateFile = (file: File): string | null => {
     // Validate file type
@@ -215,11 +207,30 @@ export default function CreateProjectPage() {
     setIsSubmitting(true);
     setErrors({});
 
-    // Mock submission — just wait a moment and redirect
-    setTimeout(() => {
+    try {
+      const res = await createProject({
+        title: title.trim(),
+        abstract: abstract.trim(),
+        keywords,
+        researchType,
+        program: program.trim() || undefined,
+        course: course.trim() || undefined,
+        section: section.trim() || undefined,
+        file: selectedFile,
+      });
+
+      if (res.error || !res.data) {
+        setErrors({ general: res.error || 'Failed to create project' });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Redirect to the newly created project detail page
+      router.push(`/student/projects/${res.data.projectId}`);
+    } catch (err) {
+      setErrors({ general: err instanceof Error ? err.message : 'An unexpected error occurred' });
       setIsSubmitting(false);
-      router.push('/student/projects');
-    }, 1000);
+    }
   };
 
   const clearAttachment = () => {

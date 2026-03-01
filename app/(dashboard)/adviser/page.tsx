@@ -6,21 +6,12 @@ import Card, { CardTitle, CardDescription } from '@/components/ui/Card';
 import JoinGroupCard from '@/components/ui/JoinGroupCard';
 import { FiUsers, FiFolder, FiCalendar, FiTrendingUp } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
 import { MOCK_ADVISER_STATS } from '@/lib/mock-data';
 
 export default function AdviserDashboardPage() {
   const router = useRouter();
-  const { user: profile, isLoading } = useUserProfile();
-
-  const user = profile
-    ? { name: profile.name, email: profile.email, role: profile.role, avatar: profile.avatar }
-    : { name: '', email: '', role: 'Adviser', avatar: undefined };
-
-  const handleLogout = () => {
-    document.cookie = 'session_token=; path=/; max-age=0';
-    router.push('/login');
-  };
+  const { user, isLoading, handleLogout } = useDashboardUser('Adviser');
 
   const stats = [
     { icon: <FiUsers />, label: 'Total Advisees', value: String(MOCK_ADVISER_STATS.totalAdvisees), color: 'bg-accent-100 text-accent-600' },

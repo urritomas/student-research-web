@@ -6,21 +6,12 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/Button';
 import JoinGroupCard from '@/components/ui/JoinGroupCard';
 import { useRouter } from 'next/navigation';
-import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
 import { MOCK_DASHBOARD_INVITATIONS } from '@/lib/mock-data';
 
 export default function StudentDashboardPage() {
   const router = useRouter();
-  const { user: profile, isLoading } = useUserProfile();
-
-  const user = profile
-    ? { name: profile.name, email: profile.email, role: profile.role, avatar: profile.avatar }
-    : { name: '', email: '', role: 'Student', avatar: undefined };
-
-  const handleLogout = () => {
-    document.cookie = 'session_token=; path=/; max-age=0';
-    router.push('/login');
-  };
+  const { user, isLoading, handleLogout } = useDashboardUser('Student');
 
   if (isLoading) {
     return (

@@ -1,4 +1,3 @@
-// Layout Components
 export { default as DashboardLayout } from './DashboardLayout';
 export type { DashboardLayoutProps } from './DashboardLayout';
 
@@ -12,3 +11,5 @@ export type { HeaderProps } from './Header';
 
 export { default as Sidebar } from './Sidebar';
 export type { SidebarProps, MenuItem } from './Sidebar';
+
+export { SidebarProvider, useSidebar } from './SidebarContext';

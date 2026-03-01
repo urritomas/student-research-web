@@ -9,18 +9,14 @@ import Avatar from '@/components/ui/Avatar';
 import { FiArrowLeft, FiClock, FiUsers, FiFileText } from 'react-icons/fi';
 import { useRouter, useParams } from 'next/navigation';
 import StatusIcon from '@/components/StatusIcon';
-import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
 import { MOCK_ADVISED_PROJECTS, MOCK_PROJECT_MEMBERS } from '@/lib/mock-data';
 
 export default function AdviserProjectDetailPage() {
   const router = useRouter();
   const params = useParams();
   const projectId = params.id as string;
-  const { user: profile } = useUserProfile();
-
-  const user = profile
-    ? { name: profile.name, email: profile.email, role: profile.role, avatar: profile.avatar }
-    : { name: '', email: '', role: 'Adviser', avatar: undefined };
+  const { user, handleLogout } = useDashboardUser('Adviser');
 
   const project = MOCK_ADVISED_PROJECTS.find(p => p.id === projectId) || MOCK_ADVISED_PROJECTS[0];
 
@@ -32,11 +28,6 @@ export default function AdviserProjectDetailPage() {
   };
 
   const members = MOCK_PROJECT_MEMBERS;
-
-  const handleLogout = () => {
-    document.cookie = 'session_token=; path=/; max-age=0';
-    router.push('/login');
-  };
 
   return (
     <DashboardLayout role="adviser" user={user} onLogout={handleLogout}>
