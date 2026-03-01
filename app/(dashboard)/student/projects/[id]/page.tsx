@@ -7,9 +7,18 @@ import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Ca
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/Button';
 import Avatar from '@/components/ui/Avatar';
-import { FiFolder, FiUsers, FiCalendar, FiFileText, FiCopy, FiCheck } from 'react-icons/fi';
+import { FiFolder, FiUsers, FiCalendar, FiFileText, FiCopy, FiCheck, FiMail } from 'react-icons/fi';
 import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
-import { getProject, getProjectMembers, type Project, type ProjectMember } from '@/lib/api/projects';
+import {
+  getProject,
+  getProjectMembers,
+  getProjectInvitations,
+  inviteToProject,
+  type Project,
+  type ProjectMember,
+} from '@/lib/api/projects';
+import UserSearchModal from '@/components/UserSearchModal';
+import type { SearchUserResult } from '@/lib/api/users';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -19,25 +28,42 @@ export default function ProjectDetailPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [members, setMembers] = useState<ProjectMember[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<ProjectMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+
+  const loadMembers = async () => {
+    if (!params.id) return;
+    const [membersRes, invitesRes] = await Promise.all([
+      getProjectMembers(params.id as string),
+      getProjectInvitations(params.id as string),
+    ]);
+    setMembers(membersRes.data || []);
+    setPendingInvites(invitesRes.data || []);
+  };
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       if (!params.id) return;
       setLoading(true);
-      const [projRes, membersRes] = await Promise.all([
+      const [projRes, membersRes, invitesRes] = await Promise.all([
         getProject(params.id as string),
         getProjectMembers(params.id as string),
+        getProjectInvitations(params.id as string),
       ]);
       if (!cancelled) {
         setProject(projRes.data || null);
         setMembers(membersRes.data || []);
+        setPendingInvites(invitesRes.data || []);
         setLoading(false);
       }
     }
     load();
-    return () => { cancelled = true; };
+    const interval = setInterval(loadMembers, 10000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, [params.id]);
 
   const copyProjectCode = () => {
@@ -45,6 +71,32 @@ export default function ProjectDetailPage() {
       navigator.clipboard.writeText(project.project_code);
       setCodeCopied(true);
       setTimeout(() => setCodeCopied(false), 2000);
+    }
+  };
+
+  const existingUserIds = [
+    ...members.map((m) => m.user_id),
+    ...pendingInvites.map((m) => m.user_id),
+  ];
+
+  const handleInviteSelect = async (selectedUser: SearchUserResult) => {
+    if (!params.id) return;
+    setInviteError(null);
+    setInviteSuccess(null);
+
+    const role = selectedUser.role === 'adviser' ? 'adviser' : 'member';
+    const res = await inviteToProject(params.id as string, {
+      userId: selectedUser.id,
+      role,
+    });
+
+    if (res.error) {
+      setInviteError(res.error);
+      setTimeout(() => setInviteError(null), 4000);
+    } else {
+      setInviteSuccess(`Invitation sent to ${selectedUser.full_name}`);
+      setTimeout(() => setInviteSuccess(null), 4000);
+      loadMembers();
     }
   };
 
@@ -181,16 +233,26 @@ export default function ProjectDetailPage() {
                 <CardTitle>Team Members</CardTitle>
                 <CardDescription>
                   {members.length} {members.length === 1 ? 'member' : 'members'}
+                  {pendingInvites.length > 0 && ` · ${pendingInvites.length} pending`}
                 </CardDescription>
               </div>
-              <Button variant="primary" size="sm">
+              <Button variant="primary" size="sm" onClick={() => setInviteOpen(true)}>
                 <FiUsers className="mr-2" />
                 Invite Members
               </Button>
             </div>
           </CardHeader>
+
+          {(inviteSuccess || inviteError) && (
+            <div className={`mx-4 mb-2 px-3 py-2 rounded text-sm ${
+              inviteSuccess ? 'bg-success-50 text-success-700' : 'bg-error-50 text-error-700'
+            }`}>
+              {inviteSuccess || inviteError}
+            </div>
+          )}
+
           <div className="mt-4">
-            {members.length > 0 ? (
+            {members.length > 0 || pendingInvites.length > 0 ? (
               <div className="space-y-3">
                 {members.map((member) => (
                   <div
@@ -223,18 +285,61 @@ export default function ProjectDetailPage() {
                       member.role === 'leader' ? 'primary' :
                       member.role === 'adviser' ? 'success' : 'default'
                     }>
-                      {member.role}
+                      {member.role === 'adviser' ? 'adviser' :
+                       member.role === 'leader' ? 'leader' : 'collaborator'}
                     </Badge>
                   </div>
                 ))}
+
+                {pendingInvites.length > 0 && (
+                  <>
+                    <div className="pt-2 pb-1">
+                      <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide">
+                        Pending Invitations
+                      </p>
+                    </div>
+                    {pendingInvites.map((invite) => (
+                      <div
+                        key={invite.id}
+                        className="flex items-center gap-4 p-3 border border-dashed border-neutral-300 rounded-lg bg-neutral-50/50"
+                      >
+                        <Avatar
+                          src={invite.users?.avatar_url}
+                          name={invite.users?.full_name || invite.users?.email || 'Unknown'}
+                          size="md"
+                        />
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-neutral-700">
+                            {invite.users?.full_name || 'Unknown User'}
+                          </h4>
+                          <p className="text-sm text-neutral-500">{invite.users?.email}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="warning">pending</Badge>
+                          <Badge variant={invite.role === 'adviser' ? 'success' : 'default'}>
+                            {invite.role === 'adviser' ? 'adviser' : 'collaborator'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             ) : (
               <p className="text-neutral-500 text-sm">
-                No team members yet. Share your project code with team members to invite them to collaborate.
+                No team members yet. Click &quot;Invite Members&quot; to search and invite collaborators.
               </p>
             )}
           </div>
         </Card>
+
+        <UserSearchModal
+          isOpen={inviteOpen}
+          onClose={() => setInviteOpen(false)}
+          onSelect={handleInviteSelect}
+          title="Invite Members"
+          excludeIds={existingUserIds}
+        />
       </div>
     </DashboardLayout>
   );

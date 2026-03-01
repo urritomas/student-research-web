@@ -35,6 +35,14 @@ export interface UpdateProfilePayload {
   status_text?: string;
 }
 
+export interface SearchUserResult {
+  id: string;
+  email: string;
+  full_name: string;
+  avatar_url?: string;
+  role: string;
+}
+
 // ─── API calls ──────────────────────────────────────────────────────────────
 
 /** Fetch the current user's profile via /api/user/profile. */
@@ -97,6 +105,13 @@ export async function completeProfile(payload: CompleteProfilePayload): Promise<
 /** Update an existing user profile. */
 export function updateProfile(payload: UpdateProfilePayload) {
   return patch<UserProfile>('/users/me', payload);
+}
+
+/** Search users by email/name, optionally filtered by role. */
+export function searchUsers(email: string, role?: 'student' | 'adviser', limit = 10) {
+  const params = new URLSearchParams({ email, limit: String(limit) });
+  if (role) params.set('role', role);
+  return get<SearchUserResult[]>(`/users/search?${params.toString()}`);
 }
 
 /** Get user role. */

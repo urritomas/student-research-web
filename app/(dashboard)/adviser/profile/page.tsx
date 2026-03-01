@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card, Avatar, Modal } from '@/components/ui';
+import { Card, Avatar, Modal, CopyableEmail } from '@/components/ui';
 import Button from '@/components/Button';
 import EditProfile from './editProfile';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
@@ -56,7 +56,7 @@ export default function AdviserProfilePage() {
             />
             <div className="flex-1">
               <h2 className="text-2xl font-bold text-primary-700">{user.name}</h2>
-              <p className="text-neutral-600">{user.email}</p>
+              <CopyableEmail email={user.email} />
               <p className="text-sm text-neutral-500 mt-1">{user.role}</p>
               {user.statusText && (
                 <p className="text-sm text-neutral-500 mt-1 italic">{user.statusText}</p>

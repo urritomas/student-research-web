@@ -3,8 +3,13 @@
 import React, { useState } from 'react';
 import Card from './Card';
 import Button from '../Button';
+import { joinProject } from '@/lib/api/projects';
 
-export default function JoinGroupCard() {
+interface JoinGroupCardProps {
+  onJoined?: () => void;
+}
+
+export default function JoinGroupCard({ onJoined }: JoinGroupCardProps) {
   const [groupCode, setGroupCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,12 +25,22 @@ export default function JoinGroupCard() {
     setError(null);
     setSuccess(null);
 
-    // Demo: mock success after brief delay
-    setTimeout(() => {
-      setSuccess(`Successfully joined "Mock Research Project"!`);
-      setGroupCode('');
+    try {
+      const res = await joinProject({ projectCode: groupCode.trim() });
+      if (res.error) {
+        setError(res.error);
+      } else if (res.data) {
+        setSuccess(res.data.message || 'Successfully joined project!');
+        setGroupCode('');
+        onJoined?.();
+      } else {
+        setError('Unexpected response from server');
+      }
+    } catch {
+      setError('Failed to join project. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   return (
