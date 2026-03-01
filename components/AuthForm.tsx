@@ -1,18 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaUser, FaLock } from "react-icons/fa";
 import Button from "./Button"
+import { login, register, oAuthSignIn } from "@/lib/api/auth";
 
 type Mode = "login" | "register";
 
 function GoogleSignInButton() {
-    const router = useRouter();
-
-    const handleGoogleSignIn = () => {
+    const handleGoogleSignIn = async () => {
       // Demo: just redirect to onboarding
-      router.push('/onboarding');
+      const result = await oAuthSignIn('google', '/auth/continue');
+      if (result.data?.url) {
+        window.location.href = result.data.url;
+      }
     };
 
     return (
@@ -42,18 +44,49 @@ function AuthForm({ mode }: { mode: Mode }) {
   const [message, setMessage] = useState<string | null>(null);
   const router = useRouter();
 
+  useEffect(() => {
+    // If a session token already exists, send to the auth-continue flow
+    // which will resolve onboarding vs dashboard after validating profile.
+    if (typeof document !== 'undefined') {
+      const match = document.cookie.match(/(?:^|;\s*)session_token=([^;]*)/);
+      if (match) {
+        router.replace('/auth/continue');
+      }
+    }
+  }, [router]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
     // Demo: just redirect to onboarding after a brief delay
-    setTimeout(() => {
+    try {
+      const result = mode === "register"
+        ? await register({ email, password, full_name: fullName })
+        : await login({ email, password });
+
+      if (result.error) {
+        setMessage(result.error);
+        setLoading(false);
+        return;
+      }
+
+      if (result.data?.token) {
+        document.cookie = `session_token=${encodeURIComponent(result.data.token)}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
+      }
+
       setMessage(mode === "register" ? "Registration successful!" : "Signed in successfully");
+      // After sign in / register, send to centralized resolver
+      // which will inspect the loaded profile and route accordingly.
       setTimeout(() => {
-        window.location.href = "/onboarding";
-      }, 500);
-    }, 800);
+        window.location.href = "/auth/continue";
+      }, 200);
+    } catch {
+      setMessage("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

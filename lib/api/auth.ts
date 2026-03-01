@@ -31,6 +31,7 @@ export interface RegisterPayload {
 
 export interface AuthResult {
   user: AuthUser | null;
+  token?: string;
   message?: string;
   redirectTo?: string;
 }

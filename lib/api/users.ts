@@ -12,6 +12,7 @@ export interface UserProfile {
   email: string;
   avatar_url?: string;
   role?: string;
+  status_text?: string;
 }
 
 export interface CompleteProfilePayload {
@@ -31,9 +32,27 @@ export interface CompleteProfileResult {
 export interface UpdateProfilePayload {
   full_name?: string;
   avatar_url?: string;
+  status_text?: string;
 }
 
 // ─── API calls ──────────────────────────────────────────────────────────────
+
+/** Fetch the current user's profile via /api/user/profile. */
+export function getUserProfile() {
+  return get<UserProfile>('/user/profile');
+}
+
+/** Update the current user's profile via /api/user/profile. */
+export function updateUserProfile(payload: UpdateProfilePayload) {
+  return patch<UserProfile>('/user/profile', payload);
+}
+
+/** Upload avatar via /api/user/avatar and auto-update profile. */
+export async function uploadUserAvatar(file: File) {
+  const formData = new FormData();
+  formData.append('avatar', file);
+  return post<{ publicUrl: string; profile: UserProfile }>('/user/avatar', formData);
+}
 
 /** Fetch the current user's profile. */
 export function getMyProfile() {
@@ -52,18 +71,25 @@ export function checkProfileExists() {
 
 /** Complete first-time profile setup (onboarding). */
 export async function completeProfile(payload: CompleteProfilePayload): Promise<CompleteProfileResult> {
-  const formData = new FormData();
-  formData.append('displayName', payload.displayName);
-  formData.append('role', payload.role);
-  formData.append('email', payload.email);
-  if (payload.googlePhotoUrl) {
-    formData.append('googlePhotoUrl', payload.googlePhotoUrl);
-  }
+  let avatarUrl: string | null = null;
+
   if (payload.avatarFile) {
+    const formData = new FormData();
     formData.append('avatar', payload.avatarFile);
+    const uploadRes = await post<{ publicUrl: string }>('/upload/avatar', formData);
+    if (uploadRes.error) return { success: false, error: `Avatar upload failed: ${uploadRes.error}` };
+    avatarUrl = uploadRes.data?.publicUrl ?? null;
   }
 
-  const { data, error } = await post<CompleteProfileResult>('/users/complete-profile', formData);
+  const body: Record<string, unknown> = {
+    displayName: payload.displayName,
+    role: payload.role,
+    email: payload.email,
+  };
+  if (avatarUrl) body.avatarUrl = avatarUrl;
+  if (!avatarUrl && payload.googlePhotoUrl) body.googlePhotoUrl = payload.googlePhotoUrl;
+
+  const { data, error } = await post<CompleteProfileResult>('/users/complete-profile', body);
   if (error) return { success: false, error };
   return data ?? { success: false, error: 'No response from server' };
 }

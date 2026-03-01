@@ -7,6 +7,7 @@ import Input from './ui/Input';
 import Select from './ui/Select';
 import Avatar from './ui/Avatar';
 import { useRouter } from 'next/navigation';
+import { completeProfile } from '@/lib/api/users';
 
 export interface NewAccountConfigModalProps {
   isOpen: boolean;
@@ -146,19 +147,23 @@ export default function NewAccountConfigModal({
 
     setIsSubmitting(true);
 
-    // Demo: redirect based on role after a brief delay
-    setTimeout(() => {
-      const role = formData.role;
-      if (role === 'student') {
-        router.push('/student');
-      } else if (role === 'teacher') {
-        router.push('/adviser');
-      } else {
-        router.push('/student');
-      }
-      onClose();
+    const result = await completeProfile({
+      displayName: formData.displayName,
+      role: formData.role as 'student' | 'teacher',
+      email: userEmail,
+      avatarFile: avatarFile,
+      googlePhotoUrl: googlePhotoUrl,
+    });
+
+    if (!result.success) {
+      setGeneralError(result.error || 'Failed to save profile. Please try again.');
       setIsSubmitting(false);
-    }, 800);
+      return;
+    }
+
+    const redirectPath = result.redirectPath || (formData.role === 'student' ? '/student' : '/adviser');
+    onClose();
+    router.push(redirectPath);
   };
 
   const roleOptions = [
