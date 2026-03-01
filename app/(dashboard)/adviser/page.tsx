@@ -6,19 +6,19 @@ import Card, { CardTitle, CardDescription } from '@/components/ui/Card';
 import JoinGroupCard from '@/components/ui/JoinGroupCard';
 import { FiUsers, FiFolder, FiCalendar, FiTrendingUp } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import { MOCK_ADVISER, MOCK_ADVISER_STATS } from '@/lib/mock-data';
+import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { MOCK_ADVISER_STATS } from '@/lib/mock-data';
 
 export default function AdviserDashboardPage() {
   const router = useRouter();
+  const { user: profile, isLoading } = useUserProfile();
 
-  const user = {
-    name: MOCK_ADVISER.full_name,
-    email: MOCK_ADVISER.email,
-    role: 'Adviser',
-    avatar: MOCK_ADVISER.avatar_url,
-  };
+  const user = profile
+    ? { name: profile.name, email: profile.email, role: profile.role, avatar: profile.avatar }
+    : { name: '', email: '', role: 'Adviser', avatar: undefined };
 
   const handleLogout = () => {
+    document.cookie = 'session_token=; path=/; max-age=0';
     router.push('/login');
   };
 
@@ -32,49 +32,57 @@ export default function AdviserDashboardPage() {
   return (
     <DashboardLayout role="adviser" user={user} onLogout={handleLogout}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-primary-700">Welcome back, {user.name}!</h1>
-          <p className="text-neutral-600 mt-1">Here's an overview of your advisees and projects</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, idx) => (
-            <Card key={idx} padding="md">
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${stat.color}`}>
-                  <div className="text-2xl">{stat.icon}</div>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-600">{stat.label}</p>
-                  <p className="text-2xl font-bold text-primary-700">{stat.value}</p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Join a Group Section */}
-          <JoinGroupCard />
-
-          <Card>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest updates from your advisees</CardDescription>
-            <div className="mt-4 space-y-3">
-              <p className="text-sm text-neutral-600">No recent activity</p>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <p className="text-neutral-500">Loading...</p>
+          </div>
+        ) : (
+          <>
+            <div>
+              <h1 className="text-3xl font-bold text-primary-700">Welcome back, {user.name}!</h1>
+              <p className="text-neutral-600 mt-1">Here's an overview of your advisees and projects</p>
             </div>
-          </Card>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardTitle>Pending Reviews</CardTitle>
-            <CardDescription>Documents awaiting your feedback</CardDescription>
-            <div className="mt-4 space-y-3">
-              <p className="text-sm text-neutral-600">No pending reviews</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {stats.map((stat, idx) => (
+                <Card key={idx} padding="md">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${stat.color}`}>
+                      <div className="text-2xl">{stat.icon}</div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-neutral-600">{stat.label}</p>
+                      <p className="text-2xl font-bold text-primary-700">{stat.value}</p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
-          </Card>
-        </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Join a Group Section */}
+              <JoinGroupCard />
+
+              <Card>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Latest updates from your advisees</CardDescription>
+                <div className="mt-4 space-y-3">
+                  <p className="text-sm text-neutral-600">No recent activity</p>
+                </div>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardTitle>Pending Reviews</CardTitle>
+                <CardDescription>Documents awaiting your feedback</CardDescription>
+                <div className="mt-4 space-y-3">
+                  <p className="text-sm text-neutral-600">No pending reviews</p>
+                </div>
+              </Card>
+            </div>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );

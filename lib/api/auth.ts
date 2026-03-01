@@ -34,6 +34,7 @@ export interface AuthResult {
   token?: string;
   message?: string;
   redirectTo?: string;
+  pending?: boolean;
 }
 
 // ─── API calls ──────────────────────────────────────────────────────────────
@@ -66,4 +67,8 @@ export function logout() {
 /** Verify an email with a token (e.g., from a confirmation link). */
 export function verifyEmail(token: string) {
   return post<AuthResult>('/auth/verify-email', { token });
+}
+
+export function resendVerification(email: string) {
+  return post<{ message: string }>('/auth/resend-verification', { email });
 }
