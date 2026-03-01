@@ -1,5 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
+
+const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
+
+function resolveImageSrc(src?: string): string | undefined {
+  if (!src) return undefined;
+  if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:')) return src;
+  if (src.startsWith('/uploads/')) return src;
+  return `${API_ORIGIN}${src}`;
+}
 
 export interface AvatarProps {
   src?: string;
@@ -34,6 +43,9 @@ function getInitials(name: string): string {
 export default function Avatar({ src, alt, name, size = 'md', className = '', status }: AvatarProps) {
   const displayName = alt || name || 'User';
   const initials = name ? getInitials(name) : '?';
+  const resolvedSrc = resolveImageSrc(src);
+  const isLocalUpload = resolvedSrc?.includes('/uploads/');
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div className={`relative inline-block ${className}`}>
@@ -46,13 +58,15 @@ export default function Avatar({ src, alt, name, size = 'md', className = '', st
           font-semibold
         `}
       >
-        {src ? (
+        {resolvedSrc && !imgError ? (
           <Image
-            src={src}
+            src={resolvedSrc}
             alt={displayName}
             width={64}
             height={64}
             className="w-full h-full object-cover"
+            unoptimized={isLocalUpload}
+            onError={() => setImgError(true)}
           />
         ) : (
           <span>{initials}</span>

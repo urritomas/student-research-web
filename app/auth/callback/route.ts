@@ -6,5 +6,11 @@ import { NextResponse } from 'next/server'
  */
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
+  const error = requestUrl.searchParams.get('error')
+
+  if (error) {
+    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error)}`, requestUrl.origin))
+  }
+
   return NextResponse.redirect(new URL('/onboarding', requestUrl.origin))
 }

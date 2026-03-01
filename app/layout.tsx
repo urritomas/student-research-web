@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import DevNav from "@/components/DevNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +29,6 @@ export default function RootLayout({
     <html lang="en">
       <body className='bg-ivory'>
         {children}
-        <DevNav />
       </body>
     </html>
   );

@@ -6,22 +6,36 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, Avatar, Modal } from '@/components/ui';
 import Button from '@/components/Button';
 import EditProfile from './editProfile';
-import { MOCK_STUDENT } from '@/lib/mock-data';
+import { useUserProfile } from '@/lib/hooks/useUserProfile';
 
 export default function StudentProfilePage() {
   const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const { user: profile, isLoading, refetch } = useUserProfile();
 
-  const user = {
-    name: MOCK_STUDENT.full_name,
-    email: MOCK_STUDENT.email,
-    role: 'Student',
-    avatarUrl: MOCK_STUDENT.avatar_url,
-  };
+  const user = profile
+    ? { name: profile.name, email: profile.email, role: profile.role, avatarUrl: profile.avatar, statusText: profile.statusText }
+    : { name: '', email: '', role: 'Student', avatarUrl: undefined, statusText: undefined };
 
   const handleLogout = () => {
+    document.cookie = 'session_token=; path=/; max-age=0';
     router.push('/login');
   };
+
+  const handleEditClose = () => {
+    setIsEditOpen(false);
+    refetch();
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout role="student" user={{ ...user, avatar: user.avatarUrl }} onLogout={handleLogout}>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-neutral-500">Loading...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="student" user={{ ...user, avatar: user.avatarUrl }} onLogout={handleLogout}>
@@ -44,6 +58,9 @@ export default function StudentProfilePage() {
               <h2 className="text-2xl font-bold text-primary-700">{user.name}</h2>
               <p className="text-neutral-600">{user.email}</p>
               <p className="text-sm text-neutral-500 mt-1">{user.role}</p>
+              {user.statusText && (
+                <p className="text-sm text-neutral-500 mt-1 italic">{user.statusText}</p>
+              )}
             </div>
           </div>
           <div className="mt-6">
@@ -54,10 +71,10 @@ export default function StudentProfilePage() {
         </Card>
       </div>
 
-      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit Profile" size="md">
+      <Modal isOpen={isEditOpen} onClose={handleEditClose} title="Edit Profile" size="md">
         <EditProfile
           user={user}
-          onClose={() => setIsEditOpen(false)}
+          onClose={handleEditClose}
         />
       </Modal>
     </DashboardLayout>
