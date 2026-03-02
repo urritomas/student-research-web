@@ -31,8 +31,9 @@ export default function DashboardLayout({ children, role, user, onLogout }: Dash
             <div className="max-w-7xl mx-auto">
               {children}
             </div>
-            <Footer />
           </main>
+
+          <Footer />
         </div>
       </div>
     </SidebarProvider>
