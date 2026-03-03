@@ -47,7 +47,15 @@ export default function AdviserProjectDetailPage() {
               <p className="text-neutral-600 mt-1">Project Details</p>
             </div>
           </div>
-          <StatusIcon status={project.status} />
+          <div className="flex items-center gap-4">
+            <StatusIcon status={project.status} />
+            <Button
+              onClick={() => router.push(`/adviser/schedule?project_id=${project.project_code}&title=${encodeURIComponent(project.title)}`)}
+              className="bg-red-700 hover:bg-red-800 text-white"
+            >
+              Book a Meeting
+            </Button>
+          </div>
         </div>
 
         {/* Project Info */}

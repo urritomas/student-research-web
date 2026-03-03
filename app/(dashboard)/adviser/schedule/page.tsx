@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
 import Card from '@/components/ui/Card';
@@ -9,15 +10,31 @@ import Button from '@/components/Button';
 export default function MeetingSchedule() {
   const { user, isLoading, handleLogout } = useDashboardUser('Adviser');
 
+  const searchParams = useSearchParams();
+
   const [form, setForm] = useState({
-    name: '',
-    section: '',
-    time: '',
+    projectCode: '',
+    projectTitle: '',
+    startTime: '',
+    endTime: '',
     date: '',
     allowPartialTime: false,
     meetingType: 'Online',
+    defenseType: 'Proposal',
     roomOption: '',
   });
+
+  useEffect(() => {
+    const projectId = searchParams.get('project_id');
+    const title = searchParams.get('title');
+    if (projectId || title) {
+      setForm(prev => ({
+        ...prev,
+        projectCode: projectId || prev.projectCode,
+        projectTitle: title || prev.projectTitle,
+      }));
+    }
+  }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -27,19 +44,53 @@ export default function MeetingSchedule() {
     }));
   };
 
-  const handleSubmit = () => {
-    console.log('Booking meeting:', form);
-    // TODO: call your API here
-  };
+  const handleSubmit = async () => {
+    try {
+        const defenseTypeMap: Record<string, string> = {
+        'Proposal': 'proposal',
+        'Midterm': 'midterm',
+        'Finals': 'final',
+        };
+
+        const payload = {
+        project_id: form.projectCode,
+        scheduled_at: `${form.date}T${form.startTime}:00`,
+        location: form.meetingType === 'Face-to-Face'
+            ? `Face-to-Face - ${form.roomOption}`
+            : 'Online',
+        partial_time: form.allowPartialTime,
+        defense_type: defenseTypeMap[form.defenseType],
+        };
+
+        const res = await fetch('/api/defenses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include', // Include cookies for authentication
+        });
+
+        if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to book meeting.');
+        }
+
+        alert('Meeting booked successfully!');
+        handleClear();
+    } catch (err: any) {
+        alert(err.message || 'Failed to book meeting.');
+    }
+};
 
   const handleClear = () => {
     setForm({
-      name: '',
-      section: '',
-      time: '',
+      projectCode: '',
+      projectTitle: '',
+      startTime: '',
+      endTime: '',
       date: '',
       allowPartialTime: false,
       meetingType: 'Online',
+      defenseType: 'Proposal',
       roomOption: '',
     });
   };
@@ -66,30 +117,47 @@ export default function MeetingSchedule() {
                 {/* Name & Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Name</label>
-                    <p className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">{user.name}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Section</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Project Code</label>
                     <input
                       type="text"
-                      name="section"
-                      value={form.section}
+                      name="projectCode"
+                      value={form.projectCode || ''}
                       onChange={handleChange}
-                      placeholder="Section name"
+                      placeholder="Project Code"
+                      className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Project Title</label>
+                    <input
+                      type="text"
+                      name="projectTitle"
+                      value={form.projectTitle || ''}
+                      onChange={handleChange}
+                      placeholder="Project Title"
                       className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                 </div>
 
-                {/* Time & Date */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Time Range & Date */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Time</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Start Time</label>
                     <input
                       type="time"
-                      name="time"
-                      value={form.time}
+                      name="startTime"
+                      value={form.startTime || ''}
+                      onChange={handleChange}
+                      className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">End Time</label>
+                    <input
+                      type="time"
+                      name="endTime"
+                      value={form.endTime || ''}
                       onChange={handleChange}
                       className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
@@ -99,7 +167,7 @@ export default function MeetingSchedule() {
                     <input
                       type="date"
                       name="date"
-                      value={form.date}
+                      value={form.date || ''}
                       onChange={handleChange}
                       className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
@@ -125,23 +193,43 @@ export default function MeetingSchedule() {
                   </button>
                 </div>
 
-                {/* Meeting Type */}
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-neutral-700 mb-2">Meeting Type</p>
-                  <div className="space-y-1">
-                    {['Online', 'Face-to-Face'].map(type => (
-                      <label key={type} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="meetingType"
-                          value={type}
-                          checked={form.meetingType === type}
-                          onChange={handleChange}
-                          className="accent-primary-500"
-                        />
-                        <span className="text-sm text-neutral-700">{type}</span>
-                      </label>
-                    ))}
+                {/* Meeting Type & Defense Type */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <p className="text-sm font-medium text-neutral-700 mb-2">Meeting Type</p>
+                    <div className="space-y-1">
+                      {['Online', 'Face-to-Face'].map(type => (
+                        <label key={type} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="meetingType"
+                            value={type}
+                            checked={form.meetingType === type}
+                            onChange={handleChange}
+                            className="accent-primary-500"
+                          />
+                          <span className="text-sm text-neutral-700">{type}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-neutral-700 mb-2">Defense Type</p>
+                    <div className="space-y-1">
+                      {['Proposal', 'Midterm', 'Finals'].map(type => (
+                        <label key={type} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="defenseType"
+                            value={type}
+                            checked={form.defenseType === type}
+                            onChange={handleChange}
+                            className="accent-primary-500"
+                          />
+                          <span className="text-sm text-neutral-700">{type}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -151,7 +239,7 @@ export default function MeetingSchedule() {
                     <label className="block text-sm font-medium text-neutral-700 mb-1">Room Option</label>
                     <select
                       name="roomOption"
-                      value={form.roomOption}
+                      value={form.roomOption || ''}
                       onChange={handleChange}
                       className="border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                     >
