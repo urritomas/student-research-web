@@ -16,6 +16,7 @@ export default function MeetingSchedule() {
   const [form, setForm] = useState({
     projectCode: '',
     projectTitle: '',
+    section: '',
     startTime: '',
     endTime: '',
     date: '',
@@ -100,6 +101,7 @@ export default function MeetingSchedule() {
     setForm({
       projectCode: '',
       projectTitle: '',
+      section: '',
       startTime: '',
       endTime: '',
       date: '',
@@ -129,8 +131,8 @@ export default function MeetingSchedule() {
               <Card className="border border-neutral-300 p-6">
                 <h1 className="text-xl font-semibold text-neutral-700 mb-6">Book a Meeting</h1>
 
-                {/* Project Code and Project Title */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Project Code and Project Title and Section*/}
+                <div className="grid grid-cols-[1fr_1fr_1fr] gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-1">Project Code</label>
                     <input
@@ -150,6 +152,17 @@ export default function MeetingSchedule() {
                       value={form.projectTitle || ''}
                       onChange={handleChange}
                       placeholder="Project Title"
+                      className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Section</label>
+                    <input
+                      type="text"
+                      name="section"
+                      value={form.section || ''}
+                      onChange={handleChange}
+                      placeholder="Section"
                       className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
