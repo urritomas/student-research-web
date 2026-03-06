@@ -7,11 +7,12 @@ import Button from '@/components/Button';
 import JoinGroupCard from '@/components/ui/JoinGroupCard';
 import { useRouter } from 'next/navigation';
 import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
-import { MOCK_DASHBOARD_INVITATIONS } from '@/lib/mock-data';
+import { useInvitations } from '@/lib/hooks/useInvitations';
 
 export default function StudentDashboardPage() {
   const router = useRouter();
   const { user, isLoading, handleLogout } = useDashboardUser('Student');
+  const { invitations, respondingId, respond } = useInvitations({ pollMs: 15000 });
 
   if (isLoading) {
     return (
@@ -60,36 +61,62 @@ export default function StudentDashboardPage() {
             </div>
 
             <div className="space-y-3">
-              {MOCK_DASHBOARD_INVITATIONS.map((invitation) => (
+              {invitations.length === 0 && (
+                <p className="text-sm text-neutral-500">No pending invitations right now.</p>
+              )}
+
+              {invitations.slice(0, 3).map((invitation) => (
                 <div
                   key={invitation.id}
                   className="p-4 border border-neutral-200 rounded-lg hover:border-skyBlue/50 hover:bg-skyBlue/5 transition-all group"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center text-xl group-hover:bg-skyBlue/10 transition-colors">
-                      {invitation.icon}
+                    <div className="flex-shrink-0 w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center text-crimsonRed group-hover:bg-skyBlue/10 transition-colors">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                      </svg>
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-darkSlateBlue text-sm mb-0.5">
-                        {invitation.projectTitle}
+                        {invitation.project_title}
                       </h3>
                       <p className="text-xs text-neutral-600 mb-2">
-                        Invited by {invitation.from}
-                      </p>
-                      <p className="text-xs text-neutral-500 line-clamp-2">
-                        {invitation.description}
+                        Invited by {invitation.invited_by_name || invitation.invited_by_email}
                       </p>
                     </div>
-                    <Button
-                      variant="success"
-                      size="sm"
-                      className="bg-mutedGreen hover:bg-mutedGreen/90 flex-shrink-0"
-                    >
-                      Accept
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="success"
+                        size="sm"
+                        className="bg-mutedGreen hover:bg-mutedGreen/90 flex-shrink-0"
+                        disabled={respondingId === invitation.id}
+                        onClick={() => respond(invitation.id, true)}
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-shrink-0"
+                        disabled={respondingId === invitation.id}
+                        onClick={() => respond(invitation.id, false)}
+                      >
+                        Decline
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
+
+              {invitations.length > 3 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push('/student/invitations')}
+                >
+                  View all invitations
+                </Button>
+              )}
             </div>
           </Card>
         </div>

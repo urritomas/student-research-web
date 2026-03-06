@@ -18,6 +18,7 @@ import {
   FiChevronsRight,
 } from 'react-icons/fi';
 import { useSidebar } from './SidebarContext';
+import { useInvitations } from '@/lib/hooks/useInvitations';
 
 export interface MenuItem {
   label: string;
@@ -36,7 +37,7 @@ const menuItems: Record<string, MenuItem[]> = {
     { label: 'Dashboard', href: '/student', icon: <FiHome /> },
     { label: 'My Projects', href: '/student/projects', icon: <FiFolder /> },
     { label: 'Create Project', href: '/student/projects/create', icon: <FiPlus /> },
-    { label: 'Invitations', href: '/student/invitations', icon: <FiMail />, badge: 3 },
+    { label: 'Invitations', href: '/student/invitations', icon: <FiMail /> },
     { label: 'Upcoming Defenses', href: '/student/defenses', icon: <FiCalendar /> },
     { label: 'Profile', href: '/student/profile', icon: <FiUser /> },
   ],
@@ -59,7 +60,16 @@ const menuItems: Record<string, MenuItem[]> = {
 
 export default function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
-  const items = menuItems[role] || [];
+  const { invitationCount } = useInvitations({
+    autoLoad: role === 'student',
+    pollMs: 15000,
+  });
+  const baseItems = menuItems[role] || [];
+  const items = baseItems.map((item) =>
+    role === 'student' && item.href === '/student/invitations'
+      ? { ...item, badge: invitationCount > 0 ? invitationCount : undefined }
+      : item,
+  );
   const { collapsed, toggle } = useSidebar();
 
   return (
