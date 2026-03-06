@@ -62,20 +62,16 @@ export default function MeetingSchedule() {
 
   const handleSubmit = async () => {
     try {
-        const defenseTypeMap: Record<string, string> = {
-        'Proposal': 'proposal',
-        'Midterm': 'midterm',
-        'Finals': 'final',
-        };
-
         const payload = {
         project_id: form.projectCode,
-        scheduled_at: `${form.date}T${form.startTime}:00`,
+        defense_type: form.defenseType.toLowerCase(),
+        start_time: `${form.date}T${form.startTime}:00`,
+        end_time: `${form.date}T${form.endTime}:00`,
         location: form.meetingType === 'Face-to-Face'
-            ? `Face-to-Face - ${form.roomOption}`
+            ? `Face-to-Face - ${form.roomOption}` 
             : 'Online',
-        partial_time: form.allowPartialTime,
-        defense_type: defenseTypeMap[form.defenseType],
+        partial_time: form.allowPartialTime ? 1 : 0,
+        section: form.section || null,
         };
 
         const res = await fetch('/api/defenses', {
