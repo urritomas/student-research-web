@@ -6,16 +6,21 @@ import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/Button';
 import { FiMail, FiCheck, FiX } from 'react-icons/fi';
-import { useRouter } from 'next/navigation';
 import EmptyState from '@/components/layout/EmptyState';
 import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
-import { MOCK_INVITATIONS_PAGE } from '@/lib/mock-data';
+import { useInvitations } from '@/lib/hooks/useInvitations';
 
 export default function StudentInvitationsPage() {
-  const router = useRouter();
-  const { user, handleLogout } = useDashboardUser('Student');
+  const { user, isLoading: profileLoading, handleLogout } = useDashboardUser('Student');
+  const {
+    invitations,
+    loading,
+    error,
+    respondingId,
+    respond,
+  } = useInvitations({ pollMs: 10000 });
 
-  const invitations = MOCK_INVITATIONS_PAGE;
+  const isLoading = profileLoading || loading;
 
   return (
     <DashboardLayout role="student" user={user} onLogout={handleLogout}>
@@ -25,7 +30,17 @@ export default function StudentInvitationsPage() {
           <p className="text-neutral-600 mt-1">Manage your project invitations</p>
         </div>
 
-        {invitations.length > 0 ? (
+        {error && (
+          <Card>
+            <p className="text-sm text-error-700">Failed to load invitations: {error}</p>
+          </Card>
+        )}
+
+        {isLoading ? (
+          <Card>
+            <p className="text-neutral-500">Loading invitations...</p>
+          </Card>
+        ) : invitations.length > 0 ? (
           <div className="space-y-4">
             {invitations.map((invitation) => (
               <Card key={invitation.id}>
@@ -37,19 +52,33 @@ export default function StudentInvitationsPage() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h3 className="font-semibold text-lg text-primary-700">
-                          {invitation.projectTitle}
+                          {invitation.project_title}
                         </h3>
                         <p className="text-sm text-neutral-600">
-                          Invited by {invitation.from} • {invitation.date}
+                          Invited by {invitation.invited_by_name || invitation.invited_by_email}
                         </p>
                       </div>
-                      <Badge variant="pending">{invitation.type}</Badge>
+                      <Badge variant="pending">
+                        {invitation.role === 'member' ? 'collaborator' : invitation.role}
+                      </Badge>
                     </div>
                     <div className="flex gap-3 mt-4">
-                      <Button variant="success" size="sm" leftIcon={<FiCheck />}>
+                      <Button
+                        variant="success"
+                        size="sm"
+                        leftIcon={<FiCheck />}
+                        disabled={respondingId === invitation.id}
+                        onClick={() => respond(invitation.id, true)}
+                      >
                         Accept
                       </Button>
-                      <Button variant="outline" size="sm" leftIcon={<FiX />}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        leftIcon={<FiX />}
+                        disabled={respondingId === invitation.id}
+                        onClick={() => respond(invitation.id, false)}
+                      >
                         Decline
                       </Button>
                     </div>
