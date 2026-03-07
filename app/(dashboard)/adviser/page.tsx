@@ -16,7 +16,7 @@ export default function AdviserDashboardPage() {
   const stats = [
     { icon: <FiUsers />, label: 'Total Advisees', value: String(MOCK_ADVISER_STATS.totalAdvisees), color: 'bg-accent-100 text-accent-600' },
     { icon: <FiFolder />, label: 'Active Projects', value: String(MOCK_ADVISER_STATS.activeProjects), color: 'bg-success-100 text-success-600' },
-    { icon: <FiCalendar />, label: 'Upcoming Defenses', value: String(MOCK_ADVISER_STATS.upcomingDefenses), color: 'bg-warning-100 text-warning-600' },
+    { icon: <FiCalendar />, label: 'Upcoming Defenses', value: String(MOCK_ADVISER_STATS.upcomingDefenses), color: 'bg-warning-100 text-warning-600', href: '/adviser/schedule' },
     { icon: <FiTrendingUp />, label: 'Completed Projects', value: String(MOCK_ADVISER_STATS.completedProjects), color: 'bg-primary-100 text-primary-600' },
   ];
 
@@ -36,7 +36,12 @@ export default function AdviserDashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {stats.map((stat, idx) => (
-                <Card key={idx} padding="md">
+                <Card
+                  key={idx}
+                  padding="md"
+                  className={stat.href ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}
+                  onClick={stat.href ? () => router.push(stat.href) : undefined}
+                >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${stat.color}`}>
                       <div className="text-2xl">{stat.icon}</div>
