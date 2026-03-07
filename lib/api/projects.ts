@@ -77,6 +77,27 @@ export interface InvitePayload {
   role?: string;
 }
 
+export interface ScheduleDefensePayload {
+  defenseType: 'proposal' | 'midterm' | 'final';
+  scheduledAt: string;
+  location?: string;
+}
+
+export interface ScheduleDefenseResult {
+  success: boolean;
+  message: string;
+  defense: {
+    id: string;
+    project_id: string;
+    defense_type: 'proposal' | 'midterm' | 'final';
+    scheduled_at: string;
+    location?: string;
+    status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
+    created_by: string;
+    created_at: string;
+  } | null;
+}
+
 // ─── API calls ──────────────────────────────────────────────────────────────
 
 /** Fetch all projects the current user is a member of or created. */
@@ -147,4 +168,9 @@ export function respondToInvitation(invitationId: string, accept: boolean) {
 /** Fetch pending invitations for a specific project. */
 export function getProjectInvitations(projectId: string) {
   return get<ProjectMember[]>(`/projects/${projectId}/invitations`);
+}
+
+/** Create a defense schedule for a project. */
+export function scheduleProjectDefense(projectId: string, payload: ScheduleDefensePayload) {
+  return post<ScheduleDefenseResult>(`/projects/${projectId}/schedule`, payload);
 }
