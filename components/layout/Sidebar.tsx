@@ -63,13 +63,21 @@ export default function Sidebar({ role }: SidebarProps) {
   const { collapsed, toggle } = useSidebar();
 
   return (
-    <aside
-      className={`
-        ${collapsed ? 'w-[72px]' : 'w-64'}
-        bg-white border-r border-neutral-200 h-screen flex flex-col
-        flex-shrink-0 transition-all duration-300 ease-in-out
-      `}
-    >
+    <>
+      {!collapsed && (
+        <div
+          className="fixed inset-0 z-20 bg-black/20 backdrop-blur-[1px]"
+          onClick={toggle}
+        />
+      )}
+      <aside
+        className={`
+          fixed top-0 left-0 z-30
+          ${collapsed ? 'w-[72px]' : 'w-64'}
+          bg-white border-r border-neutral-200 h-screen flex flex-col
+          transition-all duration-300 ease-in-out
+        `}
+      >
       <div className={`p-4 border-b border-neutral-200 ${collapsed ? 'px-3' : 'px-6'}`}>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-crimsonRed rounded-lg flex items-center justify-center flex-shrink-0">
@@ -138,5 +146,6 @@ export default function Sidebar({ role }: SidebarProps) {
         </button>
       </div>
     </aside>
+    </>
   );
 }

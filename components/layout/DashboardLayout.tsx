@@ -24,12 +24,14 @@ export default function DashboardLayout({ children, role, user, onLogout }: Dash
       <div className="h-screen bg-neutral-50 flex overflow-hidden">
         <Sidebar role={role} />
 
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 pl-[72px]">
           <Header user={user} onLogout={onLogout} />
 
-          <main className="flex-1 overflow-y-auto p-6">
-            <div className="max-w-7xl mx-auto">
-              {children}
+          <main className="flex-1 overflow-y-auto flex flex-col">
+            <div className="flex-1 p-6">
+              <div className="max-w-7xl mx-auto">
+                {children}
+              </div>
             </div>
             <Footer />
           </main>

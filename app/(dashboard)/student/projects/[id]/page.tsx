@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
@@ -17,7 +17,9 @@ import {
   type Project,
   type ProjectMember,
 } from '@/lib/api/projects';
+import { getPaperVersions, type PaperVersion } from '@/lib/api/paperVersions';
 import UserSearchModal from '@/components/UserSearchModal';
+import PaperVersionTimeline from '@/components/PaperVersionTimeline';
 import type { SearchUserResult } from '@/lib/api/users';
 
 export default function ProjectDetailPage() {
@@ -33,6 +35,16 @@ export default function ProjectDetailPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+  const [paperVersions, setPaperVersions] = useState<PaperVersion[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+
+  const loadPaperVersions = useCallback(async () => {
+    if (!params.id) return;
+    setVersionsLoading(true);
+    const res = await getPaperVersions(params.id as string);
+    setPaperVersions(res.data || []);
+    setVersionsLoading(false);
+  }, [params.id]);
 
   const loadMembers = async () => {
     if (!params.id) return;
@@ -62,9 +74,10 @@ export default function ProjectDetailPage() {
       }
     }
     load();
+    loadPaperVersions();
     const interval = setInterval(loadMembers, 10000);
     return () => { cancelled = true; clearInterval(interval); };
-  }, [params.id]);
+  }, [params.id, loadPaperVersions]);
 
   const copyProjectCode = () => {
     if (project?.project_code) {
@@ -340,6 +353,19 @@ export default function ProjectDetailPage() {
           title="Invite Members"
           excludeIds={existingUserIds}
         />
+
+        {/* Paper Version Control */}
+        <Card>
+          <div className="p-6">
+            <PaperVersionTimeline
+              projectId={project.id}
+              paperStandard={project.paper_standard}
+              versions={paperVersions}
+              loading={versionsLoading}
+              onRefresh={loadPaperVersions}
+            />
+          </div>
+        </Card>
       </div>
     </DashboardLayout>
   );
