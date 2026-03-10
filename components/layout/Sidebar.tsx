@@ -14,8 +14,7 @@ import {
   FiBarChart2,
   FiSettings,
   FiClipboard,
-  FiChevronsLeft,
-  FiChevronsRight,
+  FiX,
 } from 'react-icons/fi';
 import { useSidebar } from './SidebarContext';
 
@@ -60,92 +59,92 @@ const menuItems: Record<string, MenuItem[]> = {
 export default function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
   const items = menuItems[role] || [];
-  const { collapsed, toggle } = useSidebar();
+  const { isOpen, setOpen } = useSidebar();
+
+  const closeSidebar = () => setOpen(false);
 
   return (
     <>
-      {!collapsed && (
+      {/* Backdrop - only show on mobile when sidebar is open */}
+      {isOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/20 backdrop-blur-[1px]"
-          onClick={toggle}
+          className="fixed inset-0 z-20 bg-black/20 backdrop-blur-[1px] lg:hidden"
+          onClick={closeSidebar}
         />
       )}
+
+      {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 z-30
-          ${collapsed ? 'w-[72px]' : 'w-64'}
+          fixed top-0 left-0 z-30 w-64
           bg-white border-r border-neutral-200 h-screen flex flex-col
-          transition-all duration-300 ease-in-out
+          transition-transform duration-300 ease-in-out
+          lg:translate-x-0
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:static lg:-translate-x-0
         `}
       >
-      <div className={`p-4 border-b border-neutral-200 ${collapsed ? 'px-3' : 'px-6'}`}>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-crimsonRed rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
+        {/* Header */}
+        <div className="p-6 border-b border-neutral-200 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-crimsonRed rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-darkSlateBlue whitespace-nowrap">Student Research</h2>
+              <p className="text-xs text-neutral-500 capitalize whitespace-nowrap">{role}</p>
+            </div>
           </div>
-          <div className={`overflow-hidden transition-all duration-300 ${collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
-            <h2 className="text-sm font-semibold text-darkSlateBlue whitespace-nowrap">Student Research</h2>
-            <p className="text-xs text-neutral-500 capitalize whitespace-nowrap">{role}</p>
-          </div>
+
+          {/* Close button - only on mobile */}
+          <button
+            onClick={closeSidebar}
+            className="p-2 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-darkSlateBlue transition-colors lg:hidden"
+            aria-label="Close sidebar"
+          >
+            <FiX className="text-lg" />
+          </button>
         </div>
-      </div>
 
-      <nav className="flex-1 p-3 overflow-y-auto overflow-x-hidden">
-        <ul className="space-y-1">
-          {items.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  title={collapsed ? item.label : undefined}
-                  className={`
-                    flex items-center gap-3 rounded-lg
-                    transition-all duration-200 group text-sm relative
-                    ${collapsed ? 'px-0 py-2.5 justify-center' : 'px-4 py-2.5'}
-                    ${isActive
-                      ? 'bg-neutral-100 text-darkSlateBlue font-medium'
-                      : 'text-neutral-600 hover:bg-neutral-50 hover:text-darkSlateBlue'
-                    }
-                  `}
-                >
-                  <span className={`text-lg flex-shrink-0 ${isActive ? 'text-darkSlateBlue' : 'text-neutral-400 group-hover:text-darkSlateBlue'}`}>
-                    {item.icon}
-                  </span>
-                  <span className={`flex-1 overflow-hidden transition-all duration-300 whitespace-nowrap ${collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
-                    {item.label}
-                  </span>
-                  {item.badge !== undefined && !collapsed && (
-                    <span className="px-2 py-0.5 text-xs bg-crimsonRed text-white rounded-full font-medium">
-                      {item.badge}
+        {/* Navigation */}
+        <nav className="flex-1 p-3 overflow-y-auto overflow-x-hidden">
+          <ul className="space-y-1">
+            {items.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    onClick={closeSidebar}
+                    className={`
+                      flex items-center gap-3 rounded-lg
+                      transition-all duration-200 group text-sm px-4 py-2.5 relative
+                      ${isActive
+                        ? 'bg-neutral-100 text-darkSlateBlue font-medium'
+                        : 'text-neutral-600 hover:bg-neutral-50 hover:text-darkSlateBlue'
+                      }
+                    `}
+                  >
+                    <span className={`text-lg flex-shrink-0 ${isActive ? 'text-darkSlateBlue' : 'text-neutral-400 group-hover:text-darkSlateBlue'}`}>
+                      {item.icon}
                     </span>
-                  )}
-                  {item.badge !== undefined && collapsed && (
-                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 text-[10px] bg-crimsonRed text-white rounded-full font-medium flex items-center justify-center">
-                      {item.badge}
+                    <span className="flex-1 overflow-hidden">
+                      {item.label}
                     </span>
-                  )}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      <div className="p-3 border-t border-neutral-200">
-        <button
-          onClick={toggle}
-          className="flex items-center justify-center w-full py-2 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-darkSlateBlue transition-colors duration-200"
-        >
-          {collapsed ? <FiChevronsRight className="text-lg" /> : <FiChevronsLeft className="text-lg" />}
-          <span className={`ml-2 text-xs font-medium overflow-hidden transition-all duration-300 whitespace-nowrap ${collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
-            Collapse
-          </span>
-        </button>
-      </div>
-    </aside>
+                    {item.badge !== undefined && (
+                      <span className="px-2 py-0.5 text-xs bg-crimsonRed text-white rounded-full font-medium">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </aside>
     </>
   );
 }
