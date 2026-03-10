@@ -21,10 +21,10 @@ export interface DashboardLayoutProps {
 export default function DashboardLayout({ children, role, user, onLogout }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="h-screen bg-neutral-50 flex overflow-hidden">
+      <div className="h-screen bg-neutral-50 flex flex-col lg:flex-row overflow-hidden">
         <Sidebar role={role} />
 
-        <div className="flex-1 flex flex-col min-w-0 pl-[72px]">
+        <div className="flex-1 flex flex-col min-w-0">
           <Header user={user} onLogout={onLogout} />
 
           <main className="flex-1 overflow-y-auto flex flex-col">
