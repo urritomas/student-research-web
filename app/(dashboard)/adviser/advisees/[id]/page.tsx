@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import Card, { CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/Button';
 import Badge from '@/components/ui/Badge';
 import Avatar from '@/components/ui/Avatar';
@@ -10,7 +10,7 @@ import { FiArrowLeft, FiClock, FiUsers, FiFileText } from 'react-icons/fi';
 import { useRouter, useParams } from 'next/navigation';
 import StatusIcon from '@/components/StatusIcon';
 import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
-import { MOCK_ADVISED_PROJECTS, MOCK_PROJECT_MEMBERS } from '@/lib/mock-data';
+import { getProject, getProjectMembers, type Project, type ProjectMember } from '@/lib/api/projects';
 
 export default function AdviserProjectDetailPage() {
   const router = useRouter();
@@ -18,16 +18,61 @@ export default function AdviserProjectDetailPage() {
   const projectId = params.id as string;
   const { user, handleLogout } = useDashboardUser('Adviser');
 
-  const project = MOCK_ADVISED_PROJECTS.find(p => p.id === projectId) || MOCK_ADVISED_PROJECTS[0];
+  const [project, setProject] = useState<Project | null>(null);
+  const [members, setMembers] = useState<ProjectMember[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const projectOwner = {
-    name: 'Maria Santos',
-    email: 'maria.santos@university.edu',
-    role: 'Owner',
-    avatar: undefined as string | undefined,
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [projectRes, membersRes] = await Promise.all([
+          getProject(projectId),
+          getProjectMembers(projectId),
+        ]);
+        if (projectRes.data) setProject(projectRes.data);
+        if (membersRes.data) setMembers(membersRes.data);
+      } catch (err) {
+        console.error('Failed to fetch project data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [projectId]);
+
+  const handleBookMeeting = () => {
+    if (!project) return;
+    localStorage.setItem('projectMembers', JSON.stringify(members));
+
+    const query = new URLSearchParams({
+      project_id: String(project.id),
+      project_code: project.project_code || '',
+      title: project.title || '',
+    });
+
+    router.push(`/defenses?${query.toString()}`);
   };
 
-  const members = MOCK_PROJECT_MEMBERS;
+  if (loading) {
+    return (
+      <DashboardLayout role="adviser" user={user} onLogout={handleLogout}>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-neutral-500">Loading project details...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!project) {
+    return (
+      <DashboardLayout role="adviser" user={user} onLogout={handleLogout}>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-red-600">Project not found</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="adviser" user={user} onLogout={handleLogout}>
@@ -50,9 +95,17 @@ export default function AdviserProjectDetailPage() {
               <h1 className="text-3xl font-bold text-primary-700">{project.title}</h1>
               <p className="text-neutral-600 mt-1">Project Details</p>
             </div>
-            
           </div>
-          <StatusIcon status={project.status} />
+          <div className="flex items-left flex-col lg:items-center lg:flex-row gap-4">
+            <StatusIcon status={project.status} />
+            <Button
+              onClick={
+                handleBookMeeting}
+              className="bg-red-700 hover:bg-red-800 text-white"
+            >
+              Book a Meeting
+            </Button>
+          </div>
         </div>
 
         {/* Project Info */}
@@ -75,45 +128,28 @@ export default function AdviserProjectDetailPage() {
                 </CardTitle>
               </CardHeader>
               <div className="mt-4 space-y-4">
-                  {/* Project Owner */}
-                  <div className="flex items-center justify-between p-3 bg-primary-50 rounded-lg border-2 border-primary-200">
-                    <div className="w-full flex items-center gap-3 flex-row">
-                      <Avatar 
-                        src={projectOwner.avatar} 
-                        name={projectOwner.name} 
-                        size="md"
-                      />
-                      <div className='flex flex-1 flex-col lg:flex-row lg:items-center lg:justify-between'>
-                        <div>
-                          <p className="font-semibold text-primary-900">{projectOwner.name}</p>
-                          <p className="text-sm text-primary-700">{projectOwner.email}</p>
-                        </div>
-                        <div className='mt-2 lg:mt-0'>
-                          <Badge variant="default">Owner</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Other Members */}
                   {members.length > 0 ? (
                     members.map((member) => (
                       <div 
-                        key={member.user_id} 
-                        className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg"
+                        key={member.id} 
+                        className={`flex items-center justify-between p-3 rounded-lg ${
+                          member.role === 'leader' ? 'bg-primary-50 border-2 border-primary-200' : 'bg-neutral-50'
+                        }`}
                       >
                         <div className="w-full flex items-center gap-3">
                           <Avatar 
                             src={member.users?.avatar_url || undefined} 
-                            name={member.users?.full_name || member.users?.email || 'Unknown'} 
+                            name={member.users?.full_name || 'Unknown'} 
                             size="md"
                           />
                           <div className='flex flex-1 flex-col lg:flex-row lg:items-center lg:justify-between'>
                             <div>
-                              <p className="font-medium text-neutral-900">
-                                {member.users?.full_name || member.users?.email || 'Unknown'}
+                              <p className={`font-medium ${member.role === 'leader' ? 'font-semibold text-primary-900' : 'text-neutral-900'}`}>
+                                {member.users?.full_name || 'Unknown'}
                               </p>
-                              <p className="text-sm text-neutral-600">{member.users?.email}</p>
+                              <p className={`text-sm ${member.role === 'leader' ? 'text-primary-700' : 'text-neutral-600'}`}>
+                                {member.users?.email}
+                              </p>
                             </div>
                             <div className='mt-2 lg:mt-0'>
                               <Badge variant="default" className="capitalize">
@@ -126,7 +162,7 @@ export default function AdviserProjectDetailPage() {
                     ))
                   ) : (
                     <p className="text-neutral-600 text-center py-4">
-                      No other members yet
+                      No team members found
                     </p>
                   )}
                 </div>

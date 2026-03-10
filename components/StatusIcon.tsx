@@ -30,6 +30,10 @@ export default function StatusIcon({ status }: { status : string }) {
             icon = <IoChatboxEllipses />
             color = "bg-yellow-300"
             break;
+        case "draft":
+            icon = <FaEdit />
+            color = "bg-gray-300"
+            break;    
     }
     
     return (
