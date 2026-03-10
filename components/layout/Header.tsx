@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Dropdown from '../ui/Dropdown';
 import Avatar from '../ui/Avatar';
 import { useRouter, usePathname } from 'next/navigation';
 import { FiBell, FiSettings, FiLogOut, FiUser, FiMenu } from 'react-icons/fi';
 import { useSidebar } from './SidebarContext';
+import { getMyNotifications } from '@/lib/api/notifications';
 
 export interface HeaderProps {
   user?: {
@@ -22,6 +23,33 @@ export default function Header({ user, onLogout }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { toggle } = useSidebar();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadNotifications() {
+      if (!user) {
+        setUnreadCount(0);
+        return;
+      }
+
+      const result = await getMyNotifications(25);
+      if (cancelled || result.error || !result.data) {
+        return;
+      }
+
+      const unread = result.data.reduce((count, item) => (
+        item.is_read ? count : count + 1
+      ), 0);
+      setUnreadCount(unread);
+    }
+
+    loadNotifications();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const userMenuItems = [
     {
@@ -72,6 +100,22 @@ export default function Header({ user, onLogout }: HeaderProps) {
         <div className="flex-1" />
 
         <div className="flex items-center gap-4">
+          {user && (
+            <button
+              type="button"
+              className="relative rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-darkSlateBlue"
+              aria-label="Notifications"
+              title="Notifications"
+            >
+              <FiBell className="text-xl" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-crimsonRed px-1.5 py-0.5 text-center text-xs font-semibold text-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {user ? (
             <Dropdown
               align="right"
