@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import EmptyState from '@/components/layout/EmptyState';
@@ -9,15 +9,32 @@ import Button from '@/components/Button';
 import { FiFolder, FiPlus } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
-import { MOCK_ADVISED_PROJECTS } from '@/lib/mock-data';
+import { getAdvisedProjects, type Project } from '@/lib/api/projects';
 
 export default function AdviserAdviseesPage() {
   const router = useRouter();
   const { user, handleLogout } = useDashboardUser('Adviser');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const projects = [...MOCK_ADVISED_PROJECTS].sort((a, b) =>
-    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await getAdvisedProjects();
+        if (res.data) {
+          setProjects([...res.data].sort((a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          ));
+        }
+      } catch (err) {
+        console.error('Failed to fetch advised projects:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   return (
     <DashboardLayout role="adviser" user={user} onLogout={handleLogout}>
@@ -29,7 +46,11 @@ export default function AdviserAdviseesPage() {
           </div>
         </div>
 
-        {projects.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <p className="text-neutral-500">Loading projects...</p>
+          </div>
+        ) : projects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
               <Card 

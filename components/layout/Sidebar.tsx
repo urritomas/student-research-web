@@ -43,7 +43,7 @@ const menuItems: Record<string, MenuItem[]> = {
     { label: 'Dashboard', href: '/adviser', icon: <FiHome /> },
     { label: 'My Advisees', href: '/adviser/advisees', icon: <FiUsers /> },
     { label: 'Projects Overview', href: '/adviser/projects', icon: <FiFolder /> },
-    { label: 'Defense Schedule', href: '/adviser/defenses', icon: <FiCalendar /> },
+    { label: 'Defense Schedule', href: '/defenses', icon: <FiCalendar /> },
     { label: 'Profile', href: '/adviser/profile', icon: <FiUser /> },
   ],
   coordinator: [
