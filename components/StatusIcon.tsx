@@ -33,9 +33,9 @@ export default function StatusIcon({ status }: { status : string }) {
     }
     
     return (
-        <div className={`${color} text-sm flex items-center justify-around w-fit gap-2 h-6 px-3 rounded-full`}>
+        <div className={`${color} text-sm flex items-center justify-around w-fit gap-2 h-9 px-3 rounded-full`}>
             {icon}
-            <p>{status}</p>
+            <p className="text-">{status}</p>
         </div>
     )
 }

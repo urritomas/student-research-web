@@ -33,19 +33,24 @@ export default function AdviserProjectDetailPage() {
     <DashboardLayout role="adviser" user={user} onLogout={handleLogout}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
+        <div className="flex flex-col justify-between gap-4 lg:flex-row">
+          <div className="flex items-left gap-5 flex-col lg:items-center lg:gap-12 lg:flex-row">
+            <button
               onClick={() => router.push('/adviser/advisees')}
-              className="flex items-center gap-2"
+              className="flex gap-2 items-center font-medium rounded-lg
+                      transition-all duration-200
+                      focus:outline-none hover:shadow-[0_4px_12px_rgba(229,231,235,0.4)] active:shadow-[0_2px_8px_rgba(229,231,235,0.5)]
+                      disabled:cursor-not-allowed disabled:opacity-60
+                      text-darkSlateBlue hover:bg-neutral-100 focus:ring-neutral-300 disabled:text-neutral-400
+                      py-2.5 text-base"
             >
               <FiArrowLeft /> Back
-            </Button>
+            </button>
             <div>
               <h1 className="text-3xl font-bold text-primary-700">{project.title}</h1>
               <p className="text-neutral-600 mt-1">Project Details</p>
             </div>
+            
           </div>
           <StatusIcon status={project.status} />
         </div>
@@ -72,18 +77,22 @@ export default function AdviserProjectDetailPage() {
               <div className="mt-4 space-y-4">
                   {/* Project Owner */}
                   <div className="flex items-center justify-between p-3 bg-primary-50 rounded-lg border-2 border-primary-200">
-                    <div className="flex items-center gap-3">
+                    <div className="w-full flex items-center gap-3 flex-row">
                       <Avatar 
                         src={projectOwner.avatar} 
                         name={projectOwner.name} 
                         size="md"
                       />
-                      <div>
-                        <p className="font-semibold text-primary-900">{projectOwner.name}</p>
-                        <p className="text-sm text-primary-700">{projectOwner.email}</p>
+                      <div className='flex flex-1 flex-col lg:flex-row lg:items-center lg:justify-between'>
+                        <div>
+                          <p className="font-semibold text-primary-900">{projectOwner.name}</p>
+                          <p className="text-sm text-primary-700">{projectOwner.email}</p>
+                        </div>
+                        <div className='mt-2 lg:mt-0'>
+                          <Badge variant="default">Owner</Badge>
+                        </div>
                       </div>
                     </div>
-                    <Badge variant="default">Owner</Badge>
                   </div>
 
                   {/* Other Members */}
@@ -93,22 +102,26 @@ export default function AdviserProjectDetailPage() {
                         key={member.user_id} 
                         className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="w-full flex items-center gap-3">
                           <Avatar 
                             src={member.users?.avatar_url || undefined} 
                             name={member.users?.full_name || member.users?.email || 'Unknown'} 
                             size="md"
                           />
-                          <div>
-                            <p className="font-medium text-neutral-900">
-                              {member.users?.full_name || member.users?.email || 'Unknown'}
-                            </p>
-                            <p className="text-sm text-neutral-600">{member.users?.email}</p>
+                          <div className='flex flex-1 flex-col lg:flex-row lg:items-center lg:justify-between'>
+                            <div>
+                              <p className="font-medium text-neutral-900">
+                                {member.users?.full_name || member.users?.email || 'Unknown'}
+                              </p>
+                              <p className="text-sm text-neutral-600">{member.users?.email}</p>
+                            </div>
+                            <div className='mt-2 lg:mt-0'>
+                              <Badge variant="default" className="capitalize">
+                                {member.role}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
-                        <Badge variant="default" className="capitalize">
-                          {member.role}
-                        </Badge>
                       </div>
                     ))
                   ) : (
