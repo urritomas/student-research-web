@@ -53,7 +53,7 @@ function shortHash(id: string): string {
 
 function DiffView({ changes }: { changes: DiffChange[] }) {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
+    <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 font-mono text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-all max-h-none sm:max-h-96 overflow-visible sm:overflow-y-auto">
       {changes.map((change, i) => {
         if (change.added) {
           return (
@@ -135,7 +135,7 @@ function VersionCard({
   const canDiff = !isFirst;
 
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-3 sm:gap-4">
       <div className="flex flex-col items-center">
         <div
           className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${
@@ -161,8 +161,10 @@ function VersionCard({
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="font-semibold text-neutral-900 break-words">
-                  {version.commit_message}
+                <span className="font-semibold text-neutral-900 break-words whitespace-pre-wrap max-w-full">
+                  {version.commit_message.length > 80
+                    ? version.commit_message.slice(0, 80) + '…'
+                    : version.commit_message}
                 </span>
                 {isLatest && <Badge variant="primary" size="sm">latest</Badge>}
                 {version.is_generated === 1 && (
@@ -179,7 +181,7 @@ function VersionCard({
                 )}
               </div>
 
-              <div className="flex items-center gap-4 text-sm text-neutral-500 flex-wrap">
+                <div className="flex items-center gap-3 text-xs sm:text-sm text-neutral-500 flex-wrap min-w-0">
                 <code className="font-mono bg-neutral-100 px-1.5 py-0.5 rounded text-xs text-neutral-600">
                   {shortHash(version.id)}
                 </code>
@@ -188,9 +190,9 @@ function VersionCard({
                 </span>
                 <span className="flex items-center gap-1">
                   <Avatar
-                    src={version.uploader_avatar ?? undefined}
-                    name={version.uploader_name}
-                    size="xs"
+                  src={version.uploader_avatar ?? undefined}
+                  name={version.uploader_name}
+                  size="xs"
                   />
                   {version.uploader_name}
                 </span>
@@ -199,7 +201,7 @@ function VersionCard({
                   {formatDate(version.created_at)}
                 </span>
                 <span className="text-xs">{formatBytes(version.file_size)}</span>
-              </div>
+                </div>
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">

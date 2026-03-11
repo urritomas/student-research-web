@@ -136,10 +136,10 @@ export default function ProjectDetailPage() {
     <DashboardLayout role="student" user={user} onLogout={handleLogout}>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-primary-700">{project.title}</h1>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-primary 700 break-words">{project.title}</h1>
               <Badge variant={project.status === 'draft' ? 'warning' : 'primary'}>
                 {project.status}
               </Badge>
@@ -171,6 +171,7 @@ export default function ProjectDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="self-start sm:self-auto"
                   onClick={copyProjectCode}
                 >
                   {codeCopied ? <FiCheck className="text-success-600" /> : <FiCopy />}
@@ -281,18 +282,18 @@ export default function ProjectDetailPage() {
                       name={member.users?.full_name || member.users?.email || 'Unknown'}
                       size="md"
                     />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-neutral-900">
+                    <div className="flex-1 min w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="font-semibold text-neutral-900 truncate">
                           {member.users?.full_name || 'Unknown User'}
                         </h4>
                         {member.role === 'leader' && (
-                          <span className="text-xs text-primary-600 font-medium">
+                          <span className="text-xs text-primary-600 font-medium whitespace-nowrap">
                             (Leader)
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-neutral-600">{member.users?.email}</p>
+                      <p className="text-sm text-neutral-600 break-all mt-0.5">{member.users?.email}</p>
                     </div>
                     <Badge variant={
                       member.role === 'leader' ? 'primary' :
@@ -314,7 +315,7 @@ export default function ProjectDetailPage() {
                     {pendingInvites.map((invite) => (
                       <div
                         key={invite.id}
-                        className="flex items-center gap-4 p-3 border border-dashed border-neutral-300 rounded-lg bg-neutral-50/50"
+                        className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 border rounded-lg"
                       >
                         <Avatar
                           src={invite.users?.avatar_url}
@@ -327,7 +328,7 @@ export default function ProjectDetailPage() {
                           </h4>
                           <p className="text-sm text-neutral-500">{invite.users?.email}</p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="self-start sm:self-auto">
                           <Badge variant="warning">pending</Badge>
                           <Badge variant={invite.role === 'adviser' ? 'success' : 'default'}>
                             {invite.role === 'adviser' ? 'adviser' : 'collaborator'}
@@ -355,8 +356,8 @@ export default function ProjectDetailPage() {
         />
 
         {/* Paper Version Control */}
-        <Card>
-          <div className="p-6">
+        <Card className="p-4 sm:p-6">
+          <div className="p-4 sm:p-6 overflow-x-auto">
             <PaperVersionTimeline
               projectId={project.id}
               paperStandard={project.paper_standard}

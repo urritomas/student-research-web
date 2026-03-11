@@ -5,6 +5,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/a
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface PaperVersion {
+  file_type: string;
+  content_preview: string;
   id: string;
   project_id: string;
   version_number: number;
