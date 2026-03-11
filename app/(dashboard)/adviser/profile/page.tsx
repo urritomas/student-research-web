@@ -48,15 +48,17 @@ export default function AdviserProfilePage() {
         </div>
 
         <Card>
-          <div className="flex items-start gap-6">
+          <div className="flex flex-col sm:flex-row items-start gap-6">
             <Avatar
               src={user.avatarUrl}
               name={user.name}
               size="xl"
             />
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <h2 className="text-2xl font-bold text-primary-700">{user.name}</h2>
-              <CopyableEmail email={user.email} />
+              <div className="mt-1 overflow-hidden text-ellipsis">
+                <CopyableEmail email={user.email}/>
+              </div>
               <p className="text-sm text-neutral-500 mt-1">{user.role}</p>
               {user.statusText && (
                 <p className="text-sm text-neutral-500 mt-1 italic">{user.statusText}</p>

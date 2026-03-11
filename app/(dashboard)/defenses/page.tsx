@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
 import { type ProjectMember } from '@/lib/api/projects';
 import Card from '@/components/ui/Card';
 import Button from '@/components/Button';
+import { createPortal } from 'react-dom';
 
 interface ScheduledDefense {
   id: string;
@@ -39,6 +40,7 @@ function computeTotalTime(start: string, end: string) {
 export default function MeetingSchedule() {
   const { user, isLoading, handleLogout } = useDashboardUser('Adviser');
 
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [defenses, setDefenses] = useState<ScheduledDefense[]>([]);
@@ -59,6 +61,16 @@ export default function MeetingSchedule() {
   });
 
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
+
+  //Clear Modal States
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false); 
+  const [isDirty, setIsDirty] = useState(false); 
+
+  //Mark form as dirty if any field changes
+  useEffect(() => {
+    const hasChanges = Object.values(form).some(v => v !== '' && v !== false);
+    setIsDirty(hasChanges);
+  }, [form]);
 
   useEffect(() => {
     const projectId = searchParams.get('project_id');
@@ -86,21 +98,21 @@ export default function MeetingSchedule() {
   }, [searchParams]);
 
   useEffect(() => {
-    let cancelled = false;
+    let cleared = false;
     async function fetchDefenses() {
       try {
-        const res = await fetch('/api/defenses', { credentials: 'include' });
+        const res = await fetch('/api/defenses', { credentials: 'include' }); 
         if (!res.ok) throw new Error('Failed to fetch defenses');
         const data = await res.json();
-        if (!cancelled) setDefenses(data);
+        if (!cleared) setDefenses(data);
       } catch (err) {
         console.error('Failed to load defenses:', err);
       } finally {
-        if (!cancelled) setDefensesLoading(false);
+        if (!cleared) setDefensesLoading(false);
       }
     }
     fetchDefenses();
-    return () => { cancelled = true; };
+    return () => { cleared = true; };
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -150,6 +162,15 @@ export default function MeetingSchedule() {
     }
 };
 
+  //  Handle Clear Button Click with modal
+  const handleClearClick = () => {
+    if (isDirty) {
+      setIsCancelModalOpen(true); // show modal if there are unsaved changes
+    } else {
+      handleClear(); // clear immediately if form is clean
+    }
+  };
+
   const handleClear = () => {
     setForm({
       projectId: '',
@@ -185,8 +206,8 @@ export default function MeetingSchedule() {
               <Card className="border border-neutral-300 p-6">
                 <h1 className="text-xl font-semibold text-neutral-700 mb-6">Book a Meeting</h1>
 
-                {/* Project Code and Project Title and Section*/}
-                <div className="grid grid-cols-[1fr_1fr_1fr] gap-4 mb-4">
+                {/* Project Code and Project Title and Section */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-1">Project Code</label>
                     <input
@@ -362,7 +383,8 @@ export default function MeetingSchedule() {
                   <Button variant="error" onClick={handleSubmit}>
                     Book Meeting
                   </Button>
-                  <Button variant="outline" onClick={handleClear}>
+                  {/* Changed: Clear button calls handleClearClick (modal aware) */}
+                  <Button variant="outline" onClick={handleClearClick}>
                     Clear
                   </Button>
                 </div>
@@ -370,6 +392,7 @@ export default function MeetingSchedule() {
               </Card>
             </div>
 
+            {/* Scheduled Meetings Table */}
             <div className="pt-6">
               <h1 className="text-3xl font-bold text-primary-700">Recent Scheduled Meetings</h1>
               <Card className="border border-neutral-300 mt-4 overflow-hidden">
@@ -409,6 +432,43 @@ export default function MeetingSchedule() {
                 )}
               </Card>
             </div>
+
+            {/*  Clear Confirmation Modal */}
+            {isCancelModalOpen &&
+              typeof document !== 'undefined' &&
+              createPortal(
+                <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40 transition-opacity duration-200 ease-out">
+                  <div className="bg-white rounded-lg shadow-lg p-6 transform transition-all duration-200 ease-out scale-95 opacity-0 animate-modal-in">
+                    <h2 className="text-lg font-semibold text-neutral-800 mb-2">
+                      Discard Changes?
+                    </h2>
+                    <p className="text-sm text-neutral-600 mb-4">
+                      You have unsaved changes. Are you sure you want to clear the form? All progress will be lost.
+                    </p>
+                    <div className="flex justify-end space-x-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsCancelModalOpen(false)}
+                      >
+                        Continue Editing
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={() => {
+                          setIsCancelModalOpen(false);
+                          handleClear();
+                        }}
+                      >
+                        Clear Form
+                      </Button>
+                    </div>
+                  </div>
+                </div>,
+                document.body
+              )}  
+
           </>
         )}
       </div>
