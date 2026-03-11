@@ -25,7 +25,10 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const res = await fetch('http://localhost:4000/api/defenses/me', {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'cookie': req.headers.get('cookie') || '',
+    },
   });
 
   const data = await res.json();

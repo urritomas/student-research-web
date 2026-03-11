@@ -8,10 +8,41 @@ import { type ProjectMember } from '@/lib/api/projects';
 import Card from '@/components/ui/Card';
 import Button from '@/components/Button';
 
+interface ScheduledDefense {
+  id: string;
+  project_title: string;
+  project_code: string;
+  start_time: string;
+  end_time: string;
+  defense_type: string;
+  location: string;
+  status: string;
+}
+
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+  });
+}
+
+function computeTotalTime(start: string, end: string) {
+  const diffMs = new Date(end).getTime() - new Date(start).getTime();
+  const totalMinutes = Math.round(diffMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h`;
+  return `${minutes}m`;
+}
+
 export default function MeetingSchedule() {
   const { user, isLoading, handleLogout } = useDashboardUser('Adviser');
 
   const searchParams = useSearchParams();
+
+  const [defenses, setDefenses] = useState<ScheduledDefense[]>([]);
+  const [defensesLoading, setDefensesLoading] = useState(true);
 
   const [form, setForm] = useState({
     projectId: '',
@@ -54,6 +85,24 @@ export default function MeetingSchedule() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchDefenses() {
+      try {
+        const res = await fetch('/api/defenses', { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to fetch defenses');
+        const data = await res.json();
+        if (!cancelled) setDefenses(data);
+      } catch (err) {
+        console.error('Failed to load defenses:', err);
+      } finally {
+        if (!cancelled) setDefensesLoading(false);
+      }
+    }
+    fetchDefenses();
+    return () => { cancelled = true; };
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setForm(prev => ({
@@ -90,6 +139,12 @@ export default function MeetingSchedule() {
 
         alert('Meeting booked successfully!');
         handleClear();
+        // Refresh defenses list
+        const refreshRes = await fetch('/api/defenses', { credentials: 'include' });
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          setDefenses(data);
+        }
     } catch (err: any) {
         alert(err.message || 'Failed to book meeting.');
     }
@@ -317,6 +372,42 @@ export default function MeetingSchedule() {
 
             <div className="pt-6">
               <h1 className="text-3xl font-bold text-primary-700">Recent Scheduled Meetings</h1>
+              <Card className="border border-neutral-300 mt-4 overflow-hidden">
+                {defensesLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <p className="text-neutral-500">Loading meetings...</p>
+                  </div>
+                ) : defenses.length === 0 ? (
+                  <div className="flex items-center justify-center h-32">
+                    <p className="text-neutral-500">No scheduled meetings yet</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-neutral-50 border-b border-neutral-200">
+                        <tr>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Project Title</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Project Code</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Start Time</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">End Time</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Total Time</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-100">
+                        {defenses.map((d) => (
+                          <tr key={d.id} className="hover:bg-neutral-50">
+                            <td className="px-4 py-3 text-neutral-800">{d.project_title}</td>
+                            <td className="px-4 py-3 text-neutral-600">{d.project_code}</td>
+                            <td className="px-4 py-3 text-neutral-600">{formatDateTime(d.start_time)}</td>
+                            <td className="px-4 py-3 text-neutral-600">{formatDateTime(d.end_time)}</td>
+                            <td className="px-4 py-3 text-neutral-600">{computeTotalTime(d.start_time, d.end_time)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Card>
             </div>
           </>
         )}
