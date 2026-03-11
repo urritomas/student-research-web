@@ -136,6 +136,7 @@ function VersionCard({
 
   return (
     <div className="flex gap-3 sm:gap-4">
+      {/* Left timeline dot */}
       <div className="flex flex-col items-center">
         <div
           className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${
@@ -149,6 +150,7 @@ function VersionCard({
         <div className="w-px flex-1 bg-neutral-200 mt-1" />
       </div>
 
+      {/* Card content */}
       <div className="flex-1 mb-4">
         <div
           onClick={canDiff ? handleToggle : undefined}
@@ -158,14 +160,17 @@ function VersionCard({
               : 'border-neutral-200 bg-white'
           } ${canDiff ? 'cursor-pointer hover:shadow-sm' : ''}`}
         >
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="font-semibold text-neutral-900 break-words whitespace-pre-wrap max-w-full">
+          {/* Header and buttons row */}
+          <div className="flex items-start justify-between gap-4 mb-3">
+            {/* Title and badges */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <span className="font-semibold text-neutral-900 break-words">
                   {version.commit_message.length > 80
                     ? version.commit_message.slice(0, 80) + '…'
                     : version.commit_message}
                 </span>
+
                 {isLatest && <Badge variant="primary" size="sm">latest</Badge>}
                 {version.is_generated === 1 && (
                   <Badge variant="default" size="sm">
@@ -181,7 +186,8 @@ function VersionCard({
                 )}
               </div>
 
-                <div className="flex items-center gap-3 text-xs sm:text-sm text-neutral-500 flex-wrap min-w-0">
+              {/* Metadata */}
+              <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-neutral-500">
                 <code className="font-mono bg-neutral-100 px-1.5 py-0.5 rounded text-xs text-neutral-600">
                   {shortHash(version.id)}
                 </code>
@@ -190,9 +196,9 @@ function VersionCard({
                 </span>
                 <span className="flex items-center gap-1">
                   <Avatar
-                  src={version.uploader_avatar ?? undefined}
-                  name={version.uploader_name}
-                  size="xs"
+                    src={version.uploader_avatar ?? undefined}
+                    name={version.uploader_name}
+                    size="xs"
                   />
                   {version.uploader_name}
                 </span>
@@ -201,9 +207,10 @@ function VersionCard({
                   {formatDate(version.created_at)}
                 </span>
                 <span className="text-xs">{formatBytes(version.file_size)}</span>
-                </div>
+              </div>
             </div>
 
+            {/* Download button and expand icon */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={handleDownload}
@@ -228,6 +235,7 @@ function VersionCard({
             </div>
           </div>
 
+          {/* Expanded diff view */}
           {expanded && canDiff && (
             <div className="mt-4 pt-4 border-t border-neutral-200">
               {diffLoading && (
@@ -275,8 +283,7 @@ function VersionCard({
   );
 }
 
-// ─── Upload modal ────────────────────────────────────────────────────────────
-
+//Upload modal
 function UploadVersionModal({
   isOpen,
   onClose,
@@ -428,8 +435,7 @@ function UploadVersionModal({
   );
 }
 
-// ─── Main component ──────────────────────────────────────────────────────────
-
+//Main component 
 export interface PaperVersionTimelineProps {
   projectId: string;
   paperStandard: string;
