@@ -11,6 +11,7 @@ import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
 import { createProject } from '@/lib/api/projects';
 import type { SearchUserResult } from '@/lib/api/users';
+import { createPortal } from 'react-dom';
 
 export default function CreateProjectPage() {
   const router = useRouter();
@@ -35,6 +36,7 @@ export default function CreateProjectPage() {
 
   const [contributors, setContributors] = useState<SearchUserResult[]>([]);
   const [advisers, setAdvisers] = useState<SearchUserResult[]>([]);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   // Error state
   const [errors, setErrors] = useState<{
@@ -44,6 +46,21 @@ export default function CreateProjectPage() {
     file?: string;
     general?: string;
   }>({});
+
+    //Track unsaved changes in the form
+    const [isDirty, setIsDirty] = useState(false);
+
+    // Automatically mark form as dirty if any important field changes
+    useEffect(() => {
+      if (
+        title || abstract || keywords.length || program || course || section ||
+        selectedFile || contributors.length > 1 || advisers.length > 0
+      ) {
+        setIsDirty(true);
+      } else {
+        setIsDirty(false);
+      }
+    }, [title, abstract, keywords, program, course, section, selectedFile, contributors, advisers]);
 
   useEffect(() => {
     if (user.name && !contributors.find((c) => c.full_name === user.name)) {
@@ -400,25 +417,25 @@ export default function CreateProjectPage() {
 
             {/* Program, course, section */}
             <div>
-              <div className="grid grid-cols-3 gap-4">
-               <Input
-                label="Program"
-                placeholder="Enter program name"
-                value={program}
-                onChange={(e) => setProgram(e.target.value)}
-               />
-               <Input
-                label="Course"
-                placeholder="Enter course name"
-                value={course}
-                onChange={(e) => setCourse(e.target.value)}
-               />
-               <Input
-                label="Section"
-                placeholder="Enter section"
-                value={section}
-                onChange={(e) => setSection(e.target.value)}
-               />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Input
+                  label="Program"
+                  placeholder="Enter program name"
+                  value={program}
+                  onChange={(e) => setProgram(e.target.value)}
+                />
+                <Input
+                  label="Course"
+                  placeholder="Enter course name"
+                  value={course}
+                  onChange={(e) => setCourse(e.target.value)}
+                />
+                <Input
+                  label="Section"
+                  placeholder="Enter section"
+                  value={section}
+                  onChange={(e) => setSection(e.target.value)}
+                />
               </div>
             </div>
 
@@ -458,7 +475,7 @@ export default function CreateProjectPage() {
                 ))}
               </ol>
               <Button
-                type="button"
+                type="button" 
                 size='sm'
                 leftIcon=<FaPlusCircle/>
                 variant="ghost"
@@ -560,16 +577,26 @@ export default function CreateProjectPage() {
               )}
             </div>
 
-            {/* Form Actions */}
-            <div className="flex items-center justify-end space-x-4 pt-4 border-t border-neutral-200">
+            {/*Form Actions*/}
+            <div className="flex justify-between pt-4 border-t border-neutral-200">
+              {/* Cancel button on the left */}
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push('/student/projects')}
+                onClick={() => {
+                  // Only show modal if there are unsaved changes
+                  if (isDirty) {
+                    setIsCancelModalOpen(true);
+                  } else {
+                    router.push('/student/projects');
+                  }
+                }}
                 disabled={isSubmitting}
               >
                 Cancel
               </Button>
+
+              {/* Primary Create button on the right */}
               <Button
                 type="submit"
                 variant="primary"
@@ -580,25 +607,60 @@ export default function CreateProjectPage() {
             </div>
           </form>
         </Card>
+                {/* ADDED: Cancel Confirmation Modal --- */}
+            {isCancelModalOpen &&
+              typeof document !== 'undefined' &&
+              createPortal(
+                <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40 transition-opacity duration-200 ease-out">
+                  <div className="bg-white rounded-lg shadow-lg p-6 transform transition-all duration-200 ease-out scale-95 opacity-0 animate-modal-in">
+                    <h2 className="text-lg font-semibold text-neutral-800 mb-2">
+                      Discard Changes?
+                    </h2>
+                    <p className="text-sm text-neutral-600 mb-4">
+                      You have unsaved changes. Are you sure you want to cancel? All progress will be lost.
+                    </p>
+                    <div className="flex justify-end space-x-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsCancelModalOpen(false)}
+                      >
+                        Continue Editing
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={() => {
+                          setIsCancelModalOpen(false);
+                          router.push('/student/projects');
+                        }}
+                      >
+                        Discard Changes
+                      </Button>
+                    </div>
+                  </div>
+                </div>,
+                document.body
+              )}
+
+        <UserSearchModal
+          isOpen={isContributorModalOpen}
+          onClose={() => setIsContributorModalOpen(false)}
+          onSelect={handleAddContributor}
+          role="student"
+          title="Invite Contributor"
+          excludeIds={contributors.map((c) => c.id).filter(Boolean)}
+        />
+
+        <UserSearchModal
+          isOpen={isAdviserModalOpen}
+          onClose={() => setIsAdviserModalOpen(false)}
+          onSelect={handleAddAdviser}
+          role="adviser"
+          title="Invite Adviser"
+          excludeIds={advisers.map((a) => a.id).filter(Boolean)}
+        />
       </div>
-
-      <UserSearchModal
-        isOpen={isContributorModalOpen}
-        onClose={() => setIsContributorModalOpen(false)}
-        onSelect={handleAddContributor}
-        role="student"
-        title="Invite Contributor"
-        excludeIds={contributors.map((c) => c.id).filter(Boolean)}
-      />
-
-      <UserSearchModal
-        isOpen={isAdviserModalOpen}
-        onClose={() => setIsAdviserModalOpen(false)}
-        onSelect={handleAddAdviser}
-        role="adviser"
-        title="Invite Adviser"
-        excludeIds={advisers.map((a) => a.id).filter(Boolean)}
-      />
     </DashboardLayout>
   );
 }
