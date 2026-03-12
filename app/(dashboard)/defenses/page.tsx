@@ -401,9 +401,26 @@ export default function MeetingSchedule() {
                     <p className="text-neutral-500">Loading meetings...</p>
                   </div>
                 ) : defenses.length === 0 ? (
-                  <div className="flex items-center justify-center h-32">
-                    <p className="text-neutral-500">No scheduled meetings yet</p>
-                  </div>
+                  <table className="w-full text-sm text-left">
+                      <thead className="bg-neutral-50 border-b border-neutral-200">
+                        <tr>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Project Title</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Project Code</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Start Time</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">End Time</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Total Time</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-100">
+                          <tr>
+                            <td colSpan={5} className="py-12">
+                              <div className="flex flex-col items-center justify-center">
+                                <p className="text-neutral-500">No scheduled meetings yet</p>
+                              </div>
+                            </td>
+                          </tr>
+                      </tbody>
+                  </table>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
