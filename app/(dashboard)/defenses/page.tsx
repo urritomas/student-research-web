@@ -7,6 +7,8 @@ import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
 import { type ProjectMember } from '@/lib/api/projects';
 import Card from '@/components/ui/Card';
 import Button from '@/components/Button';
+import Badge from '@/components/ui/Badge';
+import Modal, { ModalFooter } from '@/components/ui/Modal';
 
 interface ScheduledDefense {
   id: string;
@@ -17,7 +19,10 @@ interface ScheduledDefense {
   defense_type: string;
   location: string;
   status: string;
+  status_label?: 'Approved' | 'Pending' | 'Cancelled';
 }
+
+type UiNotice = { type: 'success' | 'error'; message: string } | null;
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString('en-US', {
@@ -43,6 +48,10 @@ export default function MeetingSchedule() {
 
   const [defenses, setDefenses] = useState<ScheduledDefense[]>([]);
   const [defensesLoading, setDefensesLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [notice, setNotice] = useState<UiNotice>(null);
+  const [selectedDefense, setSelectedDefense] = useState<ScheduledDefense | null>(null);
 
   const [form, setForm] = useState({
     projectId: '',
@@ -103,6 +112,13 @@ export default function MeetingSchedule() {
     return () => { cancelled = true; };
   }, []);
 
+  const fetchDefenses = async () => {
+    const res = await fetch('/api/defenses', { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch defenses');
+    const data = await res.json();
+    setDefenses(data);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setForm(prev => ({
@@ -112,43 +128,105 @@ export default function MeetingSchedule() {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
+    const defenseTypeMap: Record<string, 'proposal' | 'midterm' | 'final'> = {
+      Proposal: 'proposal',
+      Midterm: 'midterm',
+      Final: 'final',
+    };
+
+    if (!form.projectId) {
+      setNotice({ type: 'error', message: 'Project ID is required. Please open booking from a project page.' });
+      return;
+    }
+    if (!form.date || !form.startTime || !form.endTime) {
+      setNotice({ type: 'error', message: 'Date, start time, and end time are required.' });
+      return;
+    }
+    if (form.meetingType === 'Face-to-Face' && !form.roomOption) {
+      setNotice({ type: 'error', message: 'Please select a room for Face-to-Face meetings.' });
+      return;
+    }
+
+    const startDate = new Date(`${form.date}T${form.startTime}:00`);
+    const endDate = new Date(`${form.date}T${form.endTime}:00`);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || startDate >= endDate) {
+      setNotice({ type: 'error', message: 'End time must be after start time.' });
+      return;
+    }
+
     try {
-        const payload = {
+      setIsSubmitting(true);
+      setNotice(null);
+
+      const payload = {
         project_id: form.projectId,
-        defense_type: form.defenseType.toLowerCase(),
+        defense_type: defenseTypeMap[form.defenseType] || 'proposal',
         start_time: `${form.date}T${form.startTime}:00`,
         end_time: `${form.date}T${form.endTime}:00`,
         location: form.meetingType === 'Face-to-Face'
-            ? `Face-to-Face - ${form.roomOption}` 
-            : 'Online',
+          ? `Face-to-Face - ${form.roomOption}`
+          : 'Online',
         partial_time: form.allowPartialTime ? 1 : 0,
         section: form.section || null,
-        };
+      };
 
-        const res = await fetch('/api/defenses', {
+      const res = await fetch('/api/defenses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        credentials: 'include', // Include cookies for authentication
-        });
+        credentials: 'include',
+      });
 
-        if (!res.ok) {
+      if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || 'Failed to book meeting.');
-        }
+      }
 
-        alert('Meeting booked successfully!');
-        handleClear();
-        // Refresh defenses list
-        const refreshRes = await fetch('/api/defenses', { credentials: 'include' });
-        if (refreshRes.ok) {
-          const data = await refreshRes.json();
-          setDefenses(data);
-        }
+      setNotice({ type: 'success', message: 'Meeting booked successfully.' });
+      handleClear();
+      await fetchDefenses();
     } catch (err: any) {
-        alert(err.message || 'Failed to book meeting.');
+      setNotice({ type: 'error', message: err?.message || 'Failed to book meeting.' });
+    } finally {
+      setIsSubmitting(false);
     }
-};
+  };
+
+  const handleCancelMeeting = async () => {
+    if (!selectedDefense || isCancelling) return;
+
+    try {
+      setIsCancelling(true);
+      const res = await fetch('/api/defenses', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ defenseId: selectedDefense.id }),
+        credentials: 'include',
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to cancel meeting.');
+      }
+
+      setNotice({ type: 'success', message: 'Meeting cancelled successfully.' });
+      setSelectedDefense(null);
+      await fetchDefenses();
+    } catch (err: any) {
+      setNotice({ type: 'error', message: err?.message || 'Failed to cancel meeting.' });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const getStatusMeta = (defense: ScheduledDefense) => {
+    const label = defense.status_label || (defense.status === 'cancelled' ? 'Cancelled' : defense.status === 'completed' ? 'Approved' : 'Pending');
+    if (label === 'Cancelled') return { label, variant: 'error' as const };
+    if (label === 'Approved') return { label, variant: 'approved' as const };
+    return { label: 'Pending', variant: 'pending' as const };
+  };
 
   const handleClear = () => {
     setForm({
@@ -179,6 +257,15 @@ export default function MeetingSchedule() {
               <h1 className="text-3xl font-bold text-primary-700">Meeting Schedule</h1>
               <p className="text-neutral-600 mt-1">Manage your meeting availability and scheduled sessions</p>
             </div>
+
+            {notice && (
+              <div className={`rounded-lg border px-4 py-3 text-sm ${notice.type === 'error'
+                ? 'border-error-200 bg-error-50 text-error-700'
+                : 'border-success-200 bg-success-50 text-success-700'
+              }`}>
+                {notice.message}
+              </div>
+            )}
 
             {/* Book a Meeting Form */}
             <div>
@@ -322,7 +409,7 @@ export default function MeetingSchedule() {
                   <div>
                     <p className="text-sm font-medium text-neutral-700 mb-2">Defense Type</p>
                     <div className="space-y-1">
-                      {['Proposal', 'Midterm', 'Finals'].map(type => (
+                      {['Proposal', 'Midterm', 'Final'].map(type => (
                         <label key={type} className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="radio"
@@ -359,8 +446,8 @@ export default function MeetingSchedule() {
 
                 {/* Buttons */}
                 <div className="grid grid-cols-2 gap-4 mt-6">
-                  <Button variant="error" onClick={handleSubmit}>
-                    Book Meeting
+                  <Button variant="error" onClick={handleSubmit} loading={isSubmitting}>
+                    {isSubmitting ? 'Booking...' : 'Book Meeting'}
                   </Button>
                   <Button variant="outline" onClick={handleClear}>
                     Clear
@@ -391,16 +478,28 @@ export default function MeetingSchedule() {
                           <th className="px-4 py-3 font-medium text-neutral-600">Start Time</th>
                           <th className="px-4 py-3 font-medium text-neutral-600">End Time</th>
                           <th className="px-4 py-3 font-medium text-neutral-600">Total Time</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Status</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-100">
                         {defenses.map((d) => (
-                          <tr key={d.id} className="hover:bg-neutral-50">
+                          <tr
+                            key={d.id}
+                            className="hover:bg-neutral-50 cursor-pointer"
+                            onClick={() => setSelectedDefense(d)}
+                          >
                             <td className="px-4 py-3 text-neutral-800">{d.project_title}</td>
                             <td className="px-4 py-3 text-neutral-600">{d.project_code}</td>
                             <td className="px-4 py-3 text-neutral-600">{formatDateTime(d.start_time)}</td>
                             <td className="px-4 py-3 text-neutral-600">{formatDateTime(d.end_time)}</td>
                             <td className="px-4 py-3 text-neutral-600">{computeTotalTime(d.start_time, d.end_time)}</td>
+                            <td className="px-4 py-3">
+                              <Badge variant={getStatusMeta(d).variant}>{getStatusMeta(d).label}</Badge>
+                            </td>
+                            <td className="px-4 py-3 text-neutral-600">
+                              Click row
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -412,6 +511,50 @@ export default function MeetingSchedule() {
           </>
         )}
       </div>
+
+      <Modal
+        isOpen={!!selectedDefense}
+        onClose={() => setSelectedDefense(null)}
+        title="Meeting Details"
+        size="md"
+      >
+        {selectedDefense && (
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm text-neutral-500">Project</p>
+              <p className="font-medium text-neutral-800">{selectedDefense.project_title}</p>
+            </div>
+            <div>
+              <p className="text-sm text-neutral-500">Schedule</p>
+              <p className="font-medium text-neutral-800">
+                {formatDateTime(selectedDefense.start_time)} - {formatDateTime(selectedDefense.end_time)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-neutral-500">Location</p>
+              <p className="font-medium text-neutral-800">{selectedDefense.location || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-neutral-500">Status</p>
+              <Badge variant={getStatusMeta(selectedDefense).variant}>{getStatusMeta(selectedDefense).label}</Badge>
+            </div>
+
+            <ModalFooter>
+              <Button variant="outline" onClick={() => setSelectedDefense(null)}>
+                Close
+              </Button>
+              <Button
+                variant="error"
+                onClick={handleCancelMeeting}
+                loading={isCancelling}
+                disabled={getStatusMeta(selectedDefense).label === 'Cancelled'}
+              >
+                {getStatusMeta(selectedDefense).label === 'Cancelled' ? 'Already Cancelled' : 'Cancel Meeting'}
+              </Button>
+            </ModalFooter>
+          </div>
+        )}
+      </Modal>
     </DashboardLayout>
   );
 }
