@@ -13,10 +13,10 @@ interface ScheduledDefense {
   id: string;
   project_title: string;
   project_code: string;
-  start_time: string;
-  end_time: string;
+  scheduled_at: string;
   defense_type: string;
   location: string;
+  modality: string;
   status: string;
 }
 
@@ -127,14 +127,14 @@ export default function MeetingSchedule() {
     try {
         const payload = {
         project_id: form.projectId,
-        defense_type: form.defenseType.toLowerCase(),
+        defense_type: form.defenseType === 'Finals'
+            ? 'final'
+            : form.defenseType.toLowerCase(),
         start_time: `${form.date}T${form.startTime}:00`,
-        end_time: `${form.date}T${form.endTime}:00`,
         location: form.meetingType === 'Face-to-Face'
             ? `Face-to-Face - ${form.roomOption}` 
             : 'Online',
-        partial_time: form.allowPartialTime ? 1 : 0,
-        section: form.section || null,
+        modality: form.meetingType,
         };
 
         const res = await fetch('/api/defenses', {
@@ -149,7 +149,7 @@ export default function MeetingSchedule() {
         throw new Error(err.error || 'Failed to book meeting.');
         }
 
-        alert('Meeting booked successfully!');
+        alert('Defense proposal submitted! Awaiting coordinator approval.');
         handleClear();
         // Refresh defenses list
         const refreshRes = await fetch('/api/defenses', { credentials: 'include' });
@@ -411,21 +411,36 @@ export default function MeetingSchedule() {
                         <tr>
                           <th className="px-4 py-3 font-medium text-neutral-600">Project Title</th>
                           <th className="px-4 py-3 font-medium text-neutral-600">Project Code</th>
-                          <th className="px-4 py-3 font-medium text-neutral-600">Start Time</th>
-                          <th className="px-4 py-3 font-medium text-neutral-600">End Time</th>
-                          <th className="px-4 py-3 font-medium text-neutral-600">Total Time</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Scheduled At</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Type</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Modality</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-100">
-                        {defenses.map((d) => (
-                          <tr key={d.id} className="hover:bg-neutral-50">
-                            <td className="px-4 py-3 text-neutral-800">{d.project_title}</td>
-                            <td className="px-4 py-3 text-neutral-600">{d.project_code}</td>
-                            <td className="px-4 py-3 text-neutral-600">{formatDateTime(d.start_time)}</td>
-                            <td className="px-4 py-3 text-neutral-600">{formatDateTime(d.end_time)}</td>
-                            <td className="px-4 py-3 text-neutral-600">{computeTotalTime(d.start_time, d.end_time)}</td>
-                          </tr>
-                        ))}
+                        {defenses.map((d) => {
+                          const statusStyles: Record<string, string> = {
+                            pending: 'bg-warning-100 text-warning-700',
+                            approved: 'bg-success-100 text-success-700',
+                            moved: 'bg-accent-100 text-accent-700',
+                            rejected: 'bg-error-100 text-error-700',
+                          };
+                          const style = statusStyles[d.status] || 'bg-neutral-100 text-neutral-600';
+                          return (
+                            <tr key={d.id} className="hover:bg-neutral-50">
+                              <td className="px-4 py-3 text-neutral-800">{d.project_title}</td>
+                              <td className="px-4 py-3 text-neutral-600">{d.project_code}</td>
+                              <td className="px-4 py-3 text-neutral-600">{formatDateTime(d.scheduled_at)}</td>
+                              <td className="px-4 py-3 text-neutral-600 capitalize">{d.defense_type}</td>
+                              <td className="px-4 py-3 text-neutral-600">{d.modality || 'Online'}</td>
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full capitalize ${style}`}>
+                                  {d.status}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

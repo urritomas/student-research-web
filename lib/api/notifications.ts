@@ -4,7 +4,7 @@
 
 import { get, patch } from './client';
 
-export type NotificationType = 'invitation' | 'schedule';
+export type NotificationType = 'invitation' | 'schedule' | 'defense_approved' | 'defense_rejected' | 'defense_moved';
 
 export interface NotificationItem {
   id: string;

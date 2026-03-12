@@ -18,16 +18,18 @@ export interface NewAccountConfigModalProps {
   googlePhotoUrl?: string | null;
 }
 
-type UserRole = 'student' | 'teacher';
+type UserRole = 'student' | 'teacher' | 'coordinator';
 
 interface FormData {
   role: UserRole | '';
   displayName: string;
+  institutionName: string;
 }
 
 interface ValidationErrors {
   role?: string;
   displayName?: string;
+  institutionName?: string;
 }
 
 export default function NewAccountConfigModal({
@@ -44,7 +46,8 @@ export default function NewAccountConfigModal({
   // Form state
   const [formData, setFormData] = useState<FormData>({
     role: '',
-    displayName: googleDisplayName || ''
+    displayName: googleDisplayName || '',
+    institutionName: '',
   });
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -78,6 +81,10 @@ export default function NewAccountConfigModal({
       newErrors.displayName = 'Display name must be at least 2 characters';
     } else if (formData.displayName.trim().length > 50) {
       newErrors.displayName = 'Display name must be less than 50 characters';
+    }
+
+    if (formData.role === 'coordinator' && !formData.institutionName.trim()) {
+      newErrors.institutionName = 'Institution name is required for coordinators';
     }
 
     setErrors(newErrors);
@@ -149,10 +156,11 @@ export default function NewAccountConfigModal({
 
     const result = await completeProfile({
       displayName: formData.displayName,
-      role: formData.role as 'student' | 'teacher',
+      role: formData.role as 'student' | 'teacher' | 'coordinator',
       email: userEmail,
       avatarFile: avatarFile,
       googlePhotoUrl: googlePhotoUrl,
+      institutionName: formData.role === 'coordinator' ? formData.institutionName : undefined,
     });
 
     if (!result.success) {
@@ -161,7 +169,7 @@ export default function NewAccountConfigModal({
       return;
     }
 
-    const redirectPath = result.redirectPath || (formData.role === 'student' ? '/student' : '/adviser');
+    const redirectPath = result.redirectPath || (formData.role === 'student' ? '/student' : formData.role === 'coordinator' ? '/coordinator' : '/adviser');
     onClose();
     router.push(redirectPath);
   };
@@ -169,7 +177,8 @@ export default function NewAccountConfigModal({
   const roleOptions = [
     { value: '', label: 'Select your role' },
     { value: 'student', label: 'Student' },
-    { value: 'teacher', label: 'Teacher/Adviser' }
+    { value: 'teacher', label: 'Teacher/Adviser' },
+    { value: 'coordinator', label: 'Coordinator' }
   ];
 
   return (
@@ -256,6 +265,27 @@ export default function NewAccountConfigModal({
             required
           />
         </div>
+
+        {formData.role === 'coordinator' && (
+          <div>
+            <label htmlFor="institutionName" className="block text-sm font-medium text-neutral-700 mb-2">
+              Institution Name <span className="text-error-500">*</span>
+            </label>
+            <Input
+              id="institutionName"
+              type="text"
+              value={formData.institutionName}
+              onChange={(e) => handleInputChange('institutionName' as keyof FormData, e.target.value)}
+              placeholder="Enter your institution name"
+              error={errors.institutionName}
+              required
+              maxLength={255}
+            />
+            <p className="text-xs text-neutral-500 mt-1">
+              The institution you will manage as coordinator
+            </p>
+          </div>
+        )}
 
         {/* Display Name */}
         <div>

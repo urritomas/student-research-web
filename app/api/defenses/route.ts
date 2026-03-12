@@ -1,36 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-
-  const res = await fetch('http://localhost:4000/api/defenses', {
-    method: 'POST',
-    headers: { 
-        'Content-Type': 'application/json',
-        'cookie' : req.headers.get('cookie') || '', // Forward cookies for auth
-    },
-    body: JSON.stringify(body),
-  });
-
-  
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    return NextResponse.json(data, { status: res.status });
+function getAuthHeaders(req: NextRequest): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const sessionToken = req.cookies.get('session_token')?.value;
+  if (sessionToken) {
+    headers['Authorization'] = `Bearer ${sessionToken}`;
   }
+  const cookie = req.headers.get('cookie');
+  if (cookie) headers['cookie'] = cookie;
+  return headers;
+}
 
-  return NextResponse.json(data, { status: 201 });
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+
+    const res = await fetch('http://localhost:4000/api/defenses', {
+      method: 'POST',
+      headers: getAuthHeaders(req),
+      body: JSON.stringify(body),
+    });
+
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = { error: 'Invalid response from server' }; }
+
+    if (!res.ok) {
+      return NextResponse.json(data, { status: res.status });
+    }
+
+    return NextResponse.json(data, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: 'Failed to connect to API server' }, { status: 502 });
+  }
 }
 
 export async function GET(req: NextRequest) {
-  const res = await fetch('http://localhost:4000/api/defenses/me', {
-    headers: {
-      'Content-Type': 'application/json',
-      'cookie': req.headers.get('cookie') || '',
-    },
-  });
+  try {
+    const res = await fetch('http://localhost:4000/api/defenses/me', {
+      headers: getAuthHeaders(req),
+    });
 
-  const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = { error: 'Invalid response from server' }; }
+
+    return NextResponse.json(data, { status: res.status });
+  } catch {
+    return NextResponse.json({ error: 'Failed to connect to API server' }, { status: 502 });
+  }
 }

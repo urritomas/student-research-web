@@ -1,13 +1,33 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Dropdown from '../ui/Dropdown';
 import Avatar from '../ui/Avatar';
 import { useRouter, usePathname } from 'next/navigation';
-import { FiBell, FiSettings, FiLogOut, FiUser, FiMenu } from 'react-icons/fi';
+import {
+  FiBell,
+  FiSettings,
+  FiLogOut,
+  FiUser,
+  FiMenu,
+  FiCheck,
+  FiX,
+  FiCheckCircle,
+  FiInfo,
+} from 'react-icons/fi';
 import { useSidebar } from './SidebarContext';
-import { getMyNotifications } from '@/lib/api/notifications';
+import {
+  getMyNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  type NotificationItem,
+} from '@/lib/api/notifications';
+import {
+  getMyInvitations,
+  respondToInvitation,
+  type Invitation,
+} from '@/lib/api/projects';
 
 export interface HeaderProps {
   user?: {
@@ -24,32 +44,83 @@ export default function Header({ user, onLogout }: HeaderProps) {
   const pathname = usePathname();
   const { toggle } = useSidebar();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [bellOpen, setBellOpen] = useState(false);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
+  const bellRef = useRef<HTMLDivElement>(null);
+
+  const loadData = useCallback(async () => {
+    if (!user) {
+      setUnreadCount(0);
+      setNotifications([]);
+      setInvitations([]);
+      return;
+    }
+
+    const [notifResult, invResult] = await Promise.all([
+      getMyNotifications(25),
+      getMyInvitations(),
+    ]);
+
+    let unread = 0;
+
+    if (!notifResult.error && notifResult.data) {
+      setNotifications(notifResult.data);
+      unread += notifResult.data.reduce(
+        (count, item) => (item.is_read ? count : count + 1),
+        0,
+      );
+    }
+
+    if (!invResult.error && invResult.data) {
+      setInvitations(invResult.data);
+      unread += invResult.data.length;
+    }
+
+    setUnreadCount(unread);
+  }, [user]);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadNotifications() {
-      if (!user) {
-        setUnreadCount(0);
-        return;
-      }
-
-      const result = await getMyNotifications(25);
-      if (cancelled || result.error || !result.data) {
-        return;
-      }
-
-      const unread = result.data.reduce((count, item) => (
-        item.is_read ? count : count + 1
-      ), 0);
-      setUnreadCount(unread);
+    async function init() {
+      await loadData();
     }
+    if (!cancelled) init();
 
-    loadNotifications();
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [loadData]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setBellOpen(false);
+      }
+    }
+    if (bellOpen) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [bellOpen]);
+
+  async function handleMarkRead(notifId: string) {
+    await markNotificationRead(notifId);
+    await loadData();
+  }
+
+  async function handleMarkAllRead() {
+    await markAllNotificationsRead();
+    await loadData();
+  }
+
+  async function handleRespondInvitation(invitationId: string, accept: boolean) {
+    setRespondingId(invitationId);
+    await respondToInvitation(invitationId, accept);
+    await loadData();
+    setRespondingId(null);
+  }
 
   const userMenuItems = [
     {
@@ -101,19 +172,129 @@ export default function Header({ user, onLogout }: HeaderProps) {
 
         <div className="flex items-center gap-4">
           {user && (
-            <button
-              type="button"
-              className="relative rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-darkSlateBlue"
-              aria-label="Notifications"
-              title="Notifications"
-            >
-              <FiBell className="text-xl" />
-              {unreadCount > 0 && (
-                <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-crimsonRed px-1.5 py-0.5 text-center text-xs font-semibold text-white">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
+            <div ref={bellRef} className="relative">
+              <button
+                type="button"
+                className="relative rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-darkSlateBlue"
+                aria-label="Notifications"
+                title="Notifications"
+                onClick={() => {
+                  setBellOpen((o) => {
+                    if (!o) loadData(); // refresh when opening
+                    return !o;
+                  });
+                }}
+              >
+                <FiBell className="text-xl" />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-crimsonRed px-1.5 py-0.5 text-center text-xs font-semibold text-white">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {bellOpen && (
+                <div className="absolute right-0 top-full mt-2 w-96 max-h-[28rem] overflow-y-auto rounded-xl border border-neutral-200 bg-white shadow-lg z-50">
+                  <div className="sticky top-0 bg-white border-b border-neutral-100 px-4 py-3 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-neutral-800">Notifications</h3>
+                    {notifications.some((n) => !n.is_read) && (
+                      <button
+                        className="text-xs text-primary-600 hover:text-primary-800 font-medium"
+                        onClick={handleMarkAllRead}
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Pending Invitations */}
+                  {invitations.length > 0 && (
+                    <div className="border-b border-neutral-100">
+                      <div className="px-4 py-2 bg-primary-50">
+                        <span className="text-xs font-semibold text-primary-700 uppercase tracking-wide">
+                          Project Invitations
+                        </span>
+                      </div>
+                      {invitations.map((inv) => (
+                        <div
+                          key={inv.id}
+                          className="px-4 py-3 border-b border-neutral-50 last:border-b-0 hover:bg-neutral-50"
+                        >
+                          <p className="text-sm font-medium text-neutral-800">
+                            {inv.project_title}
+                          </p>
+                          <p className="text-xs text-neutral-500 mt-0.5">
+                            Invited by {inv.invited_by_name} &middot; Role: {inv.role}
+                          </p>
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              className="flex items-center gap-1 rounded-md bg-success-600 px-3 py-1 text-xs font-medium text-white hover:bg-success-700 transition-colors disabled:opacity-50"
+                              onClick={() => handleRespondInvitation(inv.id, true)}
+                              disabled={respondingId === inv.id}
+                            >
+                              <FiCheck className="text-xs" /> Accept
+                            </button>
+                            <button
+                              className="flex items-center gap-1 rounded-md bg-error-100 px-3 py-1 text-xs font-medium text-error-700 hover:bg-error-200 transition-colors disabled:opacity-50"
+                              onClick={() => handleRespondInvitation(inv.id, false)}
+                              disabled={respondingId === inv.id}
+                            >
+                              <FiX className="text-xs" /> Decline
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Notification items */}
+                  {notifications.length === 0 && invitations.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-neutral-400">
+                      No notifications yet
+                    </div>
+                  ) : (
+                    notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        className={`px-4 py-3 border-b border-neutral-50 last:border-b-0 flex items-start gap-3 cursor-pointer hover:bg-neutral-50 ${
+                          n.is_read ? 'opacity-60' : ''
+                        }`}
+                        onClick={() => !n.is_read && handleMarkRead(n.id)}
+                      >
+                        <div className="mt-0.5">
+                          {n.type === 'defense_approved' && (
+                            <FiCheckCircle className="text-success-600" />
+                          )}
+                          {n.type === 'defense_rejected' && (
+                            <FiX className="text-error-600" />
+                          )}
+                          {n.type === 'defense_moved' && (
+                            <FiInfo className="text-warning-600" />
+                          )}
+                          {(n.type === 'invitation' || n.type === 'schedule') && (
+                            <FiBell className="text-primary-500" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-neutral-800 truncate">
+                            {n.title}
+                          </p>
+                          <p className="text-xs text-neutral-500 line-clamp-2 mt-0.5">
+                            {n.message}
+                          </p>
+                          <p className="text-xs text-neutral-400 mt-1">
+                            {new Date(n.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        {!n.is_read && (
+                          <span className="mt-1.5 h-2 w-2 rounded-full bg-primary-500 flex-shrink-0" />
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
               )}
-            </button>
+            </div>
           )}
 
           {user ? (
