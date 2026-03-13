@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
-
-const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
+import { API_ORIGIN } from '@/lib/api/config';
 
 function resolveImageSrc(src?: string): string | undefined {
   if (!src) return undefined;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { API_BASE_URL } from '@/lib/api/config';
 
 function getAuthHeaders(req: NextRequest): Record<string, string> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const res = await fetch('http://localhost:4000/api/defenses', {
+    const res = await fetch(`${API_BASE_URL}/defenses`, {
       method: 'POST',
       headers: getAuthHeaders(req),
       body: JSON.stringify(body),
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const res = await fetch('http://localhost:4000/api/defenses/me', {
+    const res = await fetch(`${API_BASE_URL}/defenses/me`, {
       headers: getAuthHeaders(req),
     });
 

@@ -1,6 +1,5 @@
 import { get, post } from './client';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+import { API_BASE_URL } from './config';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

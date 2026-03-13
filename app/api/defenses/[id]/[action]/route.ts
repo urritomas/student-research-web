@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { API_BASE_URL } from '@/lib/api/config';
 
 export async function PATCH(
   req: NextRequest,
@@ -12,7 +13,7 @@ export async function PATCH(
 
   const body = action === 'reschedule' ? await req.json() : undefined;
 
-  const res = await fetch(`http://localhost:4000/api/defenses/${id}/${action}`, {
+  const res = await fetch(`${API_BASE_URL}/defenses/${id}/${action}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',

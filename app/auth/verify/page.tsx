@@ -1,10 +1,31 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { verifyEmail } from '@/lib/api/auth';
 
 export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<VerifyEmailFallback />}>
+      <VerifyEmailContent />
+    </Suspense>
+  );
+}
+
+function VerifyEmailFallback() {
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-neutral-50">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 border border-lightGray text-center space-y-6">
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-crimsonRed" />
+        </div>
+        <p className="text-neutral-600">Verifying your email...</p>
+      </div>
+    </div>
+  );
+}
+
+function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');

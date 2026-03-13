@@ -5,9 +5,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { API_ORIGIN } from '@/lib/api/config';
 import { getUserProfile, type UserProfile } from '@/lib/api/users';
-
-const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
 
 function resolveAvatarUrl(raw?: string | null): string | undefined {
   if (!raw) return undefined;

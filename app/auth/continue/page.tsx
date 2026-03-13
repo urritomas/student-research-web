@@ -1,10 +1,26 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import useAuth from '@/lib/hooks/useAuth';
 
 export default function AuthContinue() {
+  return (
+    <Suspense fallback={<AuthContinueFallback />}>
+      <AuthContinueContent />
+    </Suspense>
+  );
+}
+
+function AuthContinueFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-crimsonRed" />
+    </div>
+  );
+}
+
+function AuthContinueContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [tokenSaved, setTokenSaved] = useState(false);

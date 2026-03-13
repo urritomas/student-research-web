@@ -14,6 +14,8 @@ interface ScheduledDefense {
   project_title: string;
   project_code: string;
   scheduled_at: string;
+  start_time: string;
+  end_time: string;
   defense_type: string;
   location: string;
   modality: string;
@@ -298,6 +300,75 @@ export default function MeetingSchedule() {
       defenseType: 'Proposal',
       roomOption: '',
     });
+  };
+
+  const handleConflictAcceptPartial = async () => {
+    if (!pendingPayload) return;
+    try {
+      await submitPayload({ ...pendingPayload, force_pending: 1 });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to resolve conflict.', 'error');
+    }
+  };
+
+  const handleConflictWaitPending = async () => {
+    if (!pendingPayload) return;
+    try {
+      await submitPayload({ ...pendingPayload, force_pending: 1 });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to resolve conflict.', 'error');
+    }
+  };
+
+  const handleCancelMeeting = async (defenseId: string) => {
+    try {
+      const res = await fetch(`/api/defenses/${defenseId}/cancel`, {
+        method: 'PATCH',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to cancel meeting.');
+      }
+      showToast('Meeting cancelled.', 'success');
+      setCancelConfirmId(null);
+      setSelectedDefense(null);
+      await refreshDefenses();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to cancel meeting.', 'error');
+    }
+  };
+
+  const handleRescheduleMeeting = async () => {
+    if (!rescheduleModal) return;
+    if (!rescheduleForm.date || !rescheduleForm.startTime) {
+      showToast('Please provide both date and start time.', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/defenses/${rescheduleModal.id}/reschedule`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          scheduled_at: `${rescheduleForm.date}T${rescheduleForm.startTime}:00`,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to reschedule meeting.');
+      }
+
+      showToast('Meeting rescheduled.', 'success');
+      setRescheduleModal(null);
+      setSelectedDefense(null);
+      setRescheduleForm({ date: '', startTime: '', endTime: '' });
+      await refreshDefenses();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to reschedule meeting.', 'error');
+    }
   };
 
   return (
