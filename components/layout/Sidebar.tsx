@@ -82,24 +82,12 @@ export default function Sidebar({ role }: SidebarProps) {
           fixed top-0 left-0 z-30 w-64
           bg-white border-r border-neutral-200 h-screen flex flex-col
           transition-transform duration-300 ease-in-out
-          lg:translate-x-0
+          lg:translate-x-0 lg:static lg:h-auto lg:min-h-0
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:static lg:-translate-x-0
         `}
       >
-        {/* Header */}
-        <div className="p-6 border-b border-neutral-200 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-crimsonRed rounded-lg flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-darkSlateBlue whitespace-nowrap">Student Research</h2>
-              <p className="text-xs text-neutral-500 capitalize whitespace-nowrap">{role}</p>
-            </div>
-          </div>
+        
+          
 
           {/* Close button - only on mobile */}
           <button
@@ -109,7 +97,7 @@ export default function Sidebar({ role }: SidebarProps) {
           >
             <FiX className="text-lg" />
           </button>
-        </div>
+        
 
         {/* Navigation */}
         <nav className="flex-1 p-3 overflow-y-auto overflow-x-hidden">
