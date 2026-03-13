@@ -130,14 +130,14 @@ export default function MeetingSchedule() {
         defense_type: form.defenseType === 'Finals'
             ? 'final'
             : form.defenseType.toLowerCase(),
-        start_time: `${form.date}T${form.startTime}:00`,
+        scheduled_at: `${form.date}T${form.startTime}:00`,
         location: form.meetingType === 'Face-to-Face'
             ? `Face-to-Face - ${form.roomOption}` 
             : 'Online',
         modality: form.meetingType,
         };
 
-        const res = await fetch('/api/defenses', {
+        const res = await fetch('/api/defenses/propose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

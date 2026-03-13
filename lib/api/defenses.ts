@@ -22,7 +22,7 @@ export interface Defense {
 export interface CreateDefensePayload {
   project_id: string;
   defense_type: string;
-  start_time: string;
+  scheduled_at: string;
   location: string;
   modality: string;
 }
