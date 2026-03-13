@@ -2,7 +2,7 @@
  * Projects API service – replaces all direct Supabase project queries.
  */
 
-import { get, post } from './client';
+import { get, post, patch } from './client';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -173,4 +173,9 @@ export function getProjectInvitations(projectId: string) {
 /** Create a defense schedule for a project. */
 export function scheduleProjectDefense(projectId: string, payload: ScheduleDefensePayload) {
   return post<ScheduleDefenseResult>(`/projects/${projectId}/schedule`, payload);
+}
+
+/** Update a project's status (adviser only). */
+export function updateProjectStatus(projectId: string, status: string) {
+  return patch<Project>(`/projects/${projectId}/status`, { status });
 }

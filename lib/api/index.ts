@@ -4,3 +4,5 @@ export * as usersApi from './users';
 export * as projectsApi from './projects';
 export * as uploadApi from './upload';
 export * as notificationsApi from './notifications';
+export * as coordinatorApi from './coordinator';
+export * as defensesApi from './defenses';

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const res = await fetch('http://localhost:4000/api/defenses', {
+    const res = await fetch('http://localhost:4000/api/defenses/propose', {
       method: 'POST',
       headers: getAuthHeaders(req),
       body: JSON.stringify(body),
@@ -23,27 +23,11 @@ export async function POST(req: NextRequest) {
 
     const text = await res.text();
     let data;
-    try { data = JSON.parse(text); } catch { data = { error: 'Invalid response from server' }; }
-
-    if (!res.ok) {
-      return NextResponse.json(data, { status: res.status });
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { error: 'Invalid response from server' };
     }
-
-    return NextResponse.json(data, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: 'Failed to connect to API server' }, { status: 502 });
-  }
-}
-
-export async function GET(req: NextRequest) {
-  try {
-    const res = await fetch('http://localhost:4000/api/defenses/me', {
-      headers: getAuthHeaders(req),
-    });
-
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } catch { data = { error: 'Invalid response from server' }; }
 
     return NextResponse.json(data, { status: res.status });
   } catch {

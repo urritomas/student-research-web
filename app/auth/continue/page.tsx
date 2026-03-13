@@ -1,31 +1,39 @@
 "use client";
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import useAuth from '@/lib/hooks/useAuth';
 
 export default function AuthContinue() {
-  const { user, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [tokenSaved, setTokenSaved] = useState(false);
 
   useEffect(() => {
-    if (loading) return;
+    const urlToken = searchParams.get('token');
+    if (urlToken && typeof document !== 'undefined') {
+      document.cookie = `session_token=${encodeURIComponent(urlToken)}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
+      window.history.replaceState({}, '', '/auth/continue');
+    }
+    setTokenSaved(true);
+  }, [searchParams]);
+
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!tokenSaved || loading) return;
 
     if (!user) {
-      // No valid session/profile -> go to login
       router.replace('/login');
       return;
     }
 
-    // Determine if onboarding is needed. We consider profile incomplete when
-    // `full_name` or `role` is missing.
     const needsOnboarding = !user.full_name || !user.role;
     if (needsOnboarding) {
       router.replace('/onboarding');
       return;
     }
 
-    // Otherwise redirect to role-based dashboard
     const role = (user.role || '').toLowerCase();
     if (role === 'student') {
       router.replace('/student');
@@ -36,7 +44,7 @@ export default function AuthContinue() {
     } else {
       router.replace('/student');
     }
-  }, [loading, user, router]);
+  }, [tokenSaved, loading, user, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-50">

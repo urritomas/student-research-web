@@ -15,6 +15,9 @@ import {
   FiSettings,
   FiClipboard,
   FiX,
+  FiBookOpen,
+  FiCheckSquare,
+  FiBell,
 } from 'react-icons/fi';
 import { useSidebar } from './SidebarContext';
 
@@ -35,7 +38,7 @@ const menuItems: Record<string, MenuItem[]> = {
     { label: 'Dashboard', href: '/student', icon: <FiHome /> },
     { label: 'My Projects', href: '/student/projects', icon: <FiFolder /> },
     { label: 'Create Project', href: '/student/projects/create', icon: <FiPlus /> },
-    { label: 'Invitations', href: '/student/invitations', icon: <FiMail />, badge: 3 },
+    { label: 'Notifications', href: '/student/invitations', icon: <FiBell /> },
     { label: 'Upcoming Defenses', href: '/student/defenses', icon: <FiCalendar /> },
     { label: 'Profile', href: '/student/profile', icon: <FiUser /> },
   ],
@@ -48,10 +51,10 @@ const menuItems: Record<string, MenuItem[]> = {
   ],
   coordinator: [
     { label: 'Dashboard', href: '/coordinator', icon: <FiHome /> },
+    { label: 'Defense Management', href: '/coordinator/defenses', icon: <FiCheckSquare /> },
+    { label: 'Advisers', href: '/coordinator/advisers', icon: <FiUsers /> },
+    { label: 'Courses', href: '/coordinator/courses', icon: <FiBookOpen /> },
     { label: 'All Projects', href: '/coordinator/projects', icon: <FiFolder /> },
-    { label: 'Defense Management', href: '/coordinator/defenses', icon: <FiCalendar /> },
-    { label: 'Rubrics', href: '/coordinator/rubrics', icon: <FiClipboard /> },
-    { label: 'Users', href: '/coordinator/users', icon: <FiUsers /> },
     { label: 'Settings', href: '/coordinator/settings', icon: <FiSettings /> },
   ],
 };

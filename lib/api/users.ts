@@ -17,10 +17,11 @@ export interface UserProfile {
 
 export interface CompleteProfilePayload {
   displayName: string;
-  role: 'student' | 'teacher';
+  role: 'student' | 'teacher' | 'coordinator';
   email: string;
   avatarFile?: File | null;
   googlePhotoUrl?: string | null;
+  institutionName?: string;
 }
 
 export interface CompleteProfileResult {
@@ -96,6 +97,7 @@ export async function completeProfile(payload: CompleteProfilePayload): Promise<
   };
   if (avatarUrl) body.avatarUrl = avatarUrl;
   if (!avatarUrl && payload.googlePhotoUrl) body.googlePhotoUrl = payload.googlePhotoUrl;
+  if (payload.institutionName) body.institutionName = payload.institutionName;
 
   const { data, error } = await post<CompleteProfileResult>('/users/complete-profile', body);
   if (error) return { success: false, error };
