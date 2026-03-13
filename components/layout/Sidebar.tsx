@@ -38,7 +38,7 @@ const menuItems: Record<string, MenuItem[]> = {
     { label: 'Dashboard', href: '/student', icon: <FiHome /> },
     { label: 'My Projects', href: '/student/projects', icon: <FiFolder /> },
     { label: 'Create Project', href: '/student/projects/create', icon: <FiPlus /> },
-    { label: 'Notifications', href: '/student/invitations', icon: <FiBell /> },
+    { label: 'Notifications', href: '/student/notifications', icon: <FiBell /> },
     { label: 'Upcoming Defenses', href: '/student/defenses', icon: <FiCalendar /> },
     { label: 'Profile', href: '/student/profile', icon: <FiUser /> },
   ],
@@ -51,11 +51,11 @@ const menuItems: Record<string, MenuItem[]> = {
   ],
   coordinator: [
     { label: 'Dashboard', href: '/coordinator', icon: <FiHome /> },
-    { label: 'Defense Management', href: '/coordinator/defenses', icon: <FiCheckSquare /> },
+    { label: 'Manage Defenses', href: '/coordinator/defenses', icon: <FiCheckSquare /> },
     { label: 'Advisers', href: '/coordinator/advisers', icon: <FiUsers /> },
     { label: 'Courses', href: '/coordinator/courses', icon: <FiBookOpen /> },
     { label: 'All Projects', href: '/coordinator/projects', icon: <FiFolder /> },
-    { label: 'Settings', href: '/coordinator/settings', icon: <FiSettings /> },
+    // { label: 'Settings', href: '/coordinator/settings', icon: <FiSettings /> },
   ],
 };
 
