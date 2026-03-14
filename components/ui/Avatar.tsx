@@ -44,7 +44,7 @@ export default function Avatar({ src, alt, name, size = 'md', className = '', st
   const displayName = alt || name || 'User';
   const initials = name ? getInitials(name) : '?';
   const resolvedSrc = resolveImageSrc(src);
-  const isLocalUpload = resolvedSrc?.includes('/uploads/');
+  const isUploadAsset = resolvedSrc?.includes('/uploads/');
   const [imgError, setImgError] = useState(false);
 
   return (
@@ -59,15 +59,25 @@ export default function Avatar({ src, alt, name, size = 'md', className = '', st
         `}
       >
         {resolvedSrc && !imgError ? (
-          <Image
-            src={resolvedSrc}
-            alt={displayName}
-            width={64}
-            height={64}
-            className="w-full h-full object-cover"
-            unoptimized={isLocalUpload}
-            onError={() => setImgError(true)}
-          />
+          isUploadAsset ? (
+            <img
+              src={resolvedSrc}
+              alt={displayName}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <Image
+              src={resolvedSrc}
+              alt={displayName}
+              width={64}
+              height={64}
+              className="w-full h-full object-cover"
+              onError={() => setImgError(true)}
+            />
+          )
         ) : (
           <span>{initials}</span>
         )}
