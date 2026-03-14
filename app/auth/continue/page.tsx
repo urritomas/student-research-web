@@ -24,6 +24,9 @@ function AuthContinueContent() {
     if (!tokenSaved || loading) return;
 
     if (!user) {
+      if (typeof document !== 'undefined') {
+        document.cookie = 'session_token=; path=/; max-age=0; samesite=lax';
+      }
       router.replace('/login');
       return;
     }

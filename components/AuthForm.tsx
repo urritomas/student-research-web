@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaUser, FaLock } from "react-icons/fa";
 import Button from "./Button"
-import { login, register, oAuthSignIn, resendVerification } from "@/lib/api/auth";
+import { getUser, login, register, oAuthSignIn, resendVerification } from "@/lib/api/auth";
 
 type Mode = "login" | "register";
 
@@ -44,18 +44,52 @@ function AuthForm({ mode }: { mode: Mode }) {
   const [message, setMessage] = useState<string | null>(null);
   const [pendingVerification, setPendingVerification] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [checkingSession, setCheckingSession] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // If a session token already exists, send to the auth-continue flow
-    // which will resolve onboarding vs dashboard after validating profile.
-    if (typeof document !== 'undefined') {
-      const match = document.cookie.match(/(?:^|;\s*)session_token=([^;]*)/);
-      if (match) {
-        router.replace('/auth/continue');
+    let cancelled = false;
+
+    async function resolveExistingSession() {
+      if (typeof document === 'undefined') {
+        if (!cancelled) setCheckingSession(false);
+        return;
       }
+
+      const hasSessionToken = /(?:^|;\s*)session_token=([^;]*)/.test(document.cookie);
+      if (!hasSessionToken) {
+        if (!cancelled) setCheckingSession(false);
+        return;
+      }
+
+      const result = await getUser();
+      if (cancelled) return;
+
+      if (result.data && !result.error) {
+        router.replace('/auth/continue');
+        return;
+      }
+
+      if (result.status === 401) {
+        document.cookie = 'session_token=; path=/; max-age=0; samesite=lax';
+      }
+
+      setCheckingSession(false);
     }
+
+    resolveExistingSession();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center p-4 bg-neutral-50">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-crimsonRed" />
+      </div>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
