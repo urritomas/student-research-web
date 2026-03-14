@@ -6,7 +6,7 @@ const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/ap
 function resolveImageSrc(src?: string): string | undefined {
   if (!src) return undefined;
   if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:')) return src;
-  if (src.startsWith('/uploads/')) return src;
+  if (src.startsWith('/uploads/')) return `${API_ORIGIN}${src}`;
   return `${API_ORIGIN}${src}`;
 }
 
