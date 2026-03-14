@@ -7,7 +7,13 @@
  * TODO: Update API_BASE_URL once the backend is deployed.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+const RAW_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, '');
+
+function buildApiUrl(path: string): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${API_BASE_URL}${normalizedPath}`;
+}
 
 /** Standard shape returned by every API helper. */
 export interface ApiResponse<T = unknown> {
@@ -45,7 +51,7 @@ async function request<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<ApiResponse<T>> {
-  const url = `${API_BASE_URL}${path}`;
+  const url = buildApiUrl(path);
   const isFormData = options.body instanceof FormData;
 
   const headers = buildHeaders(options.headers as HeadersInit | undefined);
