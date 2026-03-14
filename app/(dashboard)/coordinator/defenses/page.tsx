@@ -2,16 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import Card, { CardTitle } from '@/components/ui/Card';
+import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/Button';
 import Modal from '@/components/ui/Modal';
 import {
   FiCheck,
   FiX,
-  FiMapPin,
   FiClock,
-  FiCalendar,
   FiChevronDown,
   FiChevronUp,
   FiMonitor,
@@ -23,17 +21,18 @@ import {
   getPendingDefenses,
   verifyDefense,
   rejectDefense,
-  setDefenseVenue,
   type Defense,
 } from '@/lib/api/coordinator';
 
 function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString('en-US', {
+  const localWallClock = new Date(iso.replace(/Z$/i, ''));
+  return localWallClock.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
+    hour12: true,
   });
 }
 
@@ -64,9 +63,19 @@ export default function CoordinatorDefensesPage() {
   const [selectedDefense, setSelectedDefense] = useState<Defense | null>(null);
   const [modalType, setModalType] = useState<'approve' | 'move' | 'reject' | null>(null);
   const [venue, setVenue] = useState('');
-  const [verifiedSchedule, setVerifiedSchedule] = useState('');
+  const [moveDate, setMoveDate] = useState('');
+  const [moveStartTime, setMoveStartTime] = useState('');
+  const [moveEndTime, setMoveEndTime] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [conflictPrompt, setConflictPrompt] = useState<{
+    defenseId: string;
+    venue?: string;
+    verifiedSchedule?: string;
+    verifiedEndTime?: string;
+    notes?: string;
+    conflicts: Array<{ domain: string; defense_id: string; project_id: string; start_time: string; end_time: string | null }>;
+  } | null>(null);
 
   // Sorting & expand
   const [sortBy, setSortBy] = useState<'time' | 'status'>('time');
@@ -93,7 +102,9 @@ export default function CoordinatorDefensesPage() {
     setSelectedDefense(defense);
     setModalType(type);
     setVenue(defense.venue || defense.location || '');
-    setVerifiedSchedule('');
+    setMoveDate('');
+    setMoveStartTime('');
+    setMoveEndTime('');
     setNotes('');
   }
 
@@ -101,7 +112,9 @@ export default function CoordinatorDefensesPage() {
     setSelectedDefense(null);
     setModalType(null);
     setVenue('');
-    setVerifiedSchedule('');
+    setMoveDate('');
+    setMoveStartTime('');
+    setMoveEndTime('');
     setNotes('');
   }
 
@@ -112,7 +125,14 @@ export default function CoordinatorDefensesPage() {
       venue: venue || undefined,
       notes: notes || undefined,
     });
-    if (!res.error) {
+    if (res.data && 'conflict' in res.data && res.data.conflict) {
+      setConflictPrompt({
+        defenseId: selectedDefense.id,
+        venue: venue || undefined,
+        notes: notes || undefined,
+        conflicts: res.data.conflicts,
+      });
+    } else if (!res.error) {
       closeModal();
       await loadDefenses();
     }
@@ -120,14 +140,47 @@ export default function CoordinatorDefensesPage() {
   }
 
   async function handleMove() {
-    if (!selectedDefense || !verifiedSchedule) return;
+    if (!selectedDefense || !moveDate || !moveStartTime || !moveEndTime) return;
+
+    const verifiedSchedule = `${moveDate}T${moveStartTime}:00`;
+    const verifiedEndTime = `${moveDate}T${moveEndTime}:00`;
+
     setSubmitting(true);
     const res = await verifyDefense(selectedDefense.id, {
       venue: venue || undefined,
       verifiedSchedule,
+      verifiedEndTime,
       notes: notes || undefined,
     });
+    if (res.data && 'conflict' in res.data && res.data.conflict) {
+      setConflictPrompt({
+        defenseId: selectedDefense.id,
+        venue: venue || undefined,
+        verifiedSchedule,
+        verifiedEndTime,
+        notes: notes || undefined,
+        conflicts: res.data.conflicts,
+      });
+    } else if (!res.error) {
+      closeModal();
+      await loadDefenses();
+    }
+    setSubmitting(false);
+  }
+
+  async function handleForceApprove() {
+    if (!conflictPrompt) return;
+    setSubmitting(true);
+    const res = await verifyDefense(conflictPrompt.defenseId, {
+      venue: conflictPrompt.venue,
+      verifiedSchedule: conflictPrompt.verifiedSchedule,
+      verifiedEndTime: conflictPrompt.verifiedEndTime,
+      notes: conflictPrompt.notes,
+      forceApprove: true,
+    });
+
     if (!res.error) {
+      setConflictPrompt(null);
       closeModal();
       await loadDefenses();
     }
@@ -154,9 +207,17 @@ export default function CoordinatorDefensesPage() {
       if (sortBy === 'status') {
         return (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9);
       }
-      return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime();
+      return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
     });
   })();
+
+  const uniqueConflictSchedules = conflictPrompt
+    ? Array.from(
+      new Map(conflictPrompt.conflicts.map((item) => [item.defense_id, item])).values()
+    )
+    : [];
+
+  const uniqueConflictCount = uniqueConflictSchedules.length;
 
   return (
     <DashboardLayout role="coordinator" user={user} onLogout={handleLogout}>
@@ -249,7 +310,7 @@ export default function CoordinatorDefensesPage() {
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-600">
                         <span className="flex items-center gap-1">
                           <FiClock className="text-neutral-400" />
-                          {formatDateTime(defense.scheduled_at)}
+                          {`${formatDateTime(defense.start_time)}${defense.end_time ? ` - ${formatDateTime(defense.end_time)}` : ''}`}
                         </span>
                         <span className="flex items-center gap-1">
                           <FiMonitor className="text-neutral-400" />
@@ -320,7 +381,7 @@ export default function CoordinatorDefensesPage() {
                           <span className="text-success-600">{defense.verified_by_name}</span>
                         </div>
                       )}
-                      {defense.verified_schedule && defense.verified_schedule !== defense.scheduled_at && (
+                      {defense.verified_schedule && defense.verified_schedule !== defense.start_time && (
                         <div>
                           <span className="font-medium text-neutral-500">Modified Schedule:</span>{' '}
                           <span className="text-neutral-800">{formatDateTime(defense.verified_schedule)}</span>
@@ -344,7 +405,11 @@ export default function CoordinatorDefensesPage() {
         <div className="p-6 space-y-4">
           <p className="text-sm text-neutral-600">
             Approve the defense schedule for <strong>{selectedDefense?.project_title}</strong> on{' '}
-            <strong>{selectedDefense ? formatDateTime(selectedDefense.scheduled_at) : ''}</strong>.
+            <strong>
+              {selectedDefense
+                ? `${formatDateTime(selectedDefense.start_time)}${selectedDefense.end_time ? ` - ${formatDateTime(selectedDefense.end_time)}` : ''}`
+                : ''}
+            </strong>.
           </p>
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Location (optional update)</label>
@@ -385,16 +450,40 @@ export default function CoordinatorDefensesPage() {
           <p className="text-sm text-neutral-600">
             Move and approve the defense for <strong>{selectedDefense?.project_title}</strong>.
             The current schedule is{' '}
-            <strong>{selectedDefense ? formatDateTime(selectedDefense.scheduled_at) : ''}</strong>.
+            <strong>
+              {selectedDefense
+                ? `${formatDateTime(selectedDefense.start_time)}${selectedDefense.end_time ? ` - ${formatDateTime(selectedDefense.end_time)}` : ''}`
+                : ''}
+            </strong>.
           </p>
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">New Date &amp; Time</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">New Date</label>
             <input
-              type="datetime-local"
-              value={verifiedSchedule}
-              onChange={(e) => setVerifiedSchedule(e.target.value)}
+              type="date"
+              value={moveDate}
+              onChange={(e) => setMoveDate(e.target.value)}
               className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Start Time</label>
+              <input
+                type="time"
+                value={moveStartTime}
+                onChange={(e) => setMoveStartTime(e.target.value)}
+                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">End Time</label>
+              <input
+                type="time"
+                value={moveEndTime}
+                onChange={(e) => setMoveEndTime(e.target.value)}
+                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Location (optional update)</label>
@@ -418,7 +507,7 @@ export default function CoordinatorDefensesPage() {
           </div>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={closeModal}>Cancel</Button>
-            <Button variant="primary" onClick={handleMove} disabled={submitting || !verifiedSchedule}>
+            <Button variant="primary" onClick={handleMove} disabled={submitting || !moveDate || !moveStartTime || !moveEndTime}>
               {submitting ? 'Confirming...' : 'Confirm'}
             </Button>
           </div>
@@ -449,6 +538,43 @@ export default function CoordinatorDefensesPage() {
             <Button variant="outline" onClick={closeModal}>Cancel</Button>
             <Button variant="error" onClick={handleReject} disabled={submitting}>
               {submitting ? 'Rejecting...' : 'Reject'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={!!conflictPrompt}
+        onClose={() => setConflictPrompt(null)}
+        title="Schedule Conflict Found"
+      >
+        <div className="p-6 space-y-4">
+          <p className="text-sm text-neutral-600">
+            This defense overlaps with existing confirmed schedules. You can cancel and choose another time, or force approval to proceed anyway.
+          </p>
+          <div className="rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-sm text-warning-800">
+            {uniqueConflictCount} overlapping schedule{uniqueConflictCount === 1 ? '' : 's'} detected.
+          </div>
+          {uniqueConflictSchedules.length > 0 && (
+            <div className="rounded-lg border border-neutral-200 bg-white px-3 py-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 mb-2">
+                Overlapping time slots
+              </p>
+              <ul className="space-y-1 text-sm text-neutral-700">
+                {uniqueConflictSchedules.map((conflict) => (
+                  <li key={conflict.defense_id}>
+                    {formatDateTime(conflict.start_time)} - {formatDateTime(conflict.end_time || conflict.start_time)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setConflictPrompt(null)}>
+              Cancel
+            </Button>
+            <Button variant="error" onClick={handleForceApprove} disabled={submitting}>
+              {submitting ? 'Confirming...' : 'Force Approve'}
             </Button>
           </div>
         </div>

@@ -13,7 +13,8 @@ interface ScheduledDefense {
   id: string;
   project_title: string;
   project_code: string;
-  scheduled_at: string;
+  start_time: string;
+  end_time: string;
   defense_type: string;
   location: string;
   modality: string;
@@ -21,19 +22,18 @@ interface ScheduledDefense {
   status_label: string;
 }
 
-interface ConflictInfo {
+interface OverlapConflict {
   domain: string;
   defense_id: string;
   project_id: string;
-  remaining_minutes: number;
   overlap_minutes: number;
+  remaining_minutes: number;
 }
 
-interface ConflictResponse {
+interface OverlapConflictResponse {
   conflict: true;
-  conflicts: ConflictInfo[];
+  conflicts: OverlapConflict[];
   max_overlap_minutes: number;
-  max_remaining_minutes: number;
   candidate_total_minutes: number;
   effective_minutes: number;
   effective_start_time: string;
@@ -51,11 +51,12 @@ function formatDateTime(iso: string) {
   return parseNaiveDate(iso).toLocaleString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
     hour: 'numeric', minute: '2-digit',
+    hour12: true,
   });
 }
 
 function computeTotalTime(start: string, end: string) {
-  const diffMs = parseNaiveDate(end).getTime() - parseNaiveDate(start).getTime();
+  const diffMs = Math.abs(parseNaiveDate(end).getTime() - parseNaiveDate(start).getTime());
   const totalMinutes = Math.round(diffMs / 60000);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -64,12 +65,13 @@ function computeTotalTime(start: string, end: string) {
   return `${minutes}m`;
 }
 
-function formatOverlap(minutes: number) {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h > 0 && m > 0) return `${h}h ${m}m`;
-  if (h > 0) return `${h}h`;
-  return `${m} mins`;
+function formatMinutes(minutes: number) {
+  const safeMinutes = Math.max(0, Math.round(minutes));
+  const hours = Math.floor(safeMinutes / 60);
+  const mins = safeMinutes % 60;
+  if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+  if (hours > 0) return `${hours}h`;
+  return `${mins}m`;
 }
 
 const statusColors: Record<string, string> = {
@@ -97,7 +99,6 @@ export default function MeetingSchedule() {
     startTime: '',
     endTime: '',
     date: '',
-    allowPartialTime: false,
     meetingType: 'Online',
     defenseType: 'Proposal',
     roomOption: '',
@@ -109,10 +110,6 @@ export default function MeetingSchedule() {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false); 
   const [isDirty, setIsDirty] = useState(false);
 
-  // Conflict modal state
-  const [conflictData, setConflictData] = useState<ConflictResponse | null>(null);
-  const [pendingPayload, setPendingPayload] = useState<Record<string, unknown> | null>(null);
-
   // Meeting action modals
   const [selectedDefense, setSelectedDefense] = useState<ScheduledDefense | null>(null);
   const [rescheduleModal, setRescheduleModal] = useState<ScheduledDefense | null>(null);
@@ -120,6 +117,8 @@ export default function MeetingSchedule() {
 
   // Cancel meeting confirmation modal
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
+  const [overlapWarning, setOverlapWarning] = useState<OverlapConflictResponse | null>(null);
+  const [pendingSubmitPayload, setPendingSubmitPayload] = useState<Record<string, unknown> | null>(null);
 
   // In-app toast notification
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -131,7 +130,7 @@ export default function MeetingSchedule() {
 
   //Mark form as dirty if any field changes
   useEffect(() => {
-    const hasChanges = Object.values(form).some(v => v !== '' && v !== false);
+    const hasChanges = Object.values(form).some(v => v !== '');
     setIsDirty(hasChanges);
   }, [form]);
 
@@ -194,21 +193,8 @@ export default function MeetingSchedule() {
     }
   }
 
-  const buildPayload = (extras: Record<string, unknown> = {}) => ({
-    project_id: form.projectId,
-    defense_type: form.defenseType.toLowerCase(),
-    start_time: `${form.date}T${form.startTime}:00`,
-    end_time: `${form.date}T${form.endTime}:00`,
-    location: form.meetingType === 'Face-to-Face'
-        ? `Face-to-Face - ${form.roomOption}` 
-        : 'Online',
-    partial_time: form.allowPartialTime ? 1 : 0,
-    section: form.section || null,
-    ...extras,
-  });
-
-  const submitPayload = async (payload: Record<string, unknown>) => {
-    const res = await fetch('/api/defenses', {
+  const submitDefense = async (payload: Record<string, unknown>) => {
+    const res = await fetch('/api/defenses/propose', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -217,10 +203,9 @@ export default function MeetingSchedule() {
 
     const data = await res.json();
 
-    if (data.conflict) {
-      // Store conflict info and the payload for re-submission
-      setConflictData(data as ConflictResponse);
-      setPendingPayload(payload);
+    if (res.status === 409 && data?.conflict) {
+      setOverlapWarning(data as OverlapConflictResponse);
+      setPendingSubmitPayload(payload);
       return;
     }
 
@@ -228,50 +213,80 @@ export default function MeetingSchedule() {
       throw new Error(data.error || 'Failed to book meeting.');
     }
 
-    const statusLabel = data.status === 'pending' ? 'pending (waiting)' : 'scheduled';
-    showToast(`Meeting ${statusLabel} successfully!`, 'success');
+    showToast('Defense proposal submitted! Awaiting coordinator approval.', 'success');
+    setOverlapWarning(null);
+    setPendingSubmitPayload(null);
     handleClear();
-    setConflictData(null);
-    setPendingPayload(null);
     await refreshDefenses();
   };
 
   const handleSubmit = async () => {
     try {
-        const payload = {
+      const payload = {
         project_id: form.projectId,
         defense_type: form.defenseType === 'Finals'
             ? 'final'
             : form.defenseType.toLowerCase(),
-        scheduled_at: `${form.date}T${form.startTime}:00`,
+        start_time: `${form.date}T${form.startTime}:00`,
+        end_time: `${form.date}T${form.endTime}:00`,
         location: form.meetingType === 'Face-to-Face'
             ? `Face-to-Face - ${form.roomOption}` 
             : 'Online',
         modality: form.meetingType,
-        };
+      };
 
-        const res = await fetch('/api/defenses/propose', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        credentials: 'include', // Include cookies for authentication
-        });
-
-        if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to book meeting.');
-        }
-
-        alert('Defense proposal submitted! Awaiting coordinator approval.');
-        handleClear();
-        // Refresh defenses list
-        const refreshRes = await fetch('/api/defenses', { credentials: 'include' });
-        if (refreshRes.ok) {
-          const data = await refreshRes.json();
-          setDefenses(data);
-        }
+      await submitDefense(payload);
     } catch (err: any) {
-        alert(err.message || 'Failed to book meeting.');
+      showToast(err.message || 'Failed to book meeting.', 'error');
+    }
+  };
+
+  const handleProceedWithOverlap = async () => {
+    if (!pendingSubmitPayload) return;
+    try {
+      await submitDefense({ ...pendingSubmitPayload, force_proceed: true });
+    } catch (err: any) {
+      showToast(err.message || 'Failed to book meeting.', 'error');
+    }
+  };
+
+  const handleCancelMeeting = async (defenseId: string) => {
+    try {
+      const res = await fetch(`/api/defenses/${defenseId}/cancel`, {
+        method: 'PATCH',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to cancel meeting.');
+      showToast('Meeting cancelled successfully.', 'success');
+      setCancelConfirmId(null);
+      setSelectedDefense(null);
+      await refreshDefenses();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to cancel meeting.', 'error');
+    }
+  };
+
+  const handleRescheduleMeeting = async () => {
+    if (!rescheduleModal) return;
+    try {
+      const res = await fetch(`/api/defenses/${rescheduleModal.id}/reschedule`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          start_time: `${rescheduleForm.date}T${rescheduleForm.startTime}:00`,
+          end_time: `${rescheduleForm.date}T${rescheduleForm.endTime}:00`,
+        }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reschedule meeting.');
+      showToast('Meeting rescheduled successfully.', 'success');
+      setRescheduleModal(null);
+      setSelectedDefense(null);
+      await refreshDefenses();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to reschedule meeting.', 'error');
     }
   };
 
@@ -293,7 +308,6 @@ export default function MeetingSchedule() {
       startTime: '',
       endTime: '',
       date: '',
-      allowPartialTime: false,
       meetingType: 'Online',
       defenseType: 'Proposal',
       roomOption: '',
@@ -430,25 +444,6 @@ export default function MeetingSchedule() {
                   </div>
                 </div>
 
-                {/* Allow Partial Time Toggle */}
-                <div className="flex items-center justify-between mb-4 py-2">
-                  <div>
-                    <p className="text-sm font-medium text-neutral-700">Allow Partial Time</p>
-                    <p className="text-xs text-neutral-500">Enable if you're willing to wait for participants to finish their other meetings</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setForm(prev => ({ ...prev, allowPartialTime: !prev.allowPartialTime }))}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      form.allowPartialTime ? 'bg-primary-500' : 'bg-neutral-300'
-                    }`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      form.allowPartialTime ? 'translate-x-6' : 'translate-x-1'
-                    }`} />
-                  </button>
-                </div>
-
                 {/* Meeting Type & Defense Type */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
@@ -557,7 +552,9 @@ export default function MeetingSchedule() {
                         <tr>
                           <th className="px-4 py-3 font-medium text-neutral-600">Project Title</th>
                           <th className="px-4 py-3 font-medium text-neutral-600">Project Code</th>
-                          <th className="px-4 py-3 font-medium text-neutral-600">Scheduled At</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Start Time</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">End Time</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Total Time</th>
                           <th className="px-4 py-3 font-medium text-neutral-600">Type</th>
                           <th className="px-4 py-3 font-medium text-neutral-600">Modality</th>
                           <th className="px-4 py-3 font-medium text-neutral-600">Status</th>
@@ -576,7 +573,9 @@ export default function MeetingSchedule() {
                             <tr key={d.id} className="hover:bg-neutral-50">
                               <td className="px-4 py-3 text-neutral-800">{d.project_title}</td>
                               <td className="px-4 py-3 text-neutral-600">{d.project_code}</td>
-                              <td className="px-4 py-3 text-neutral-600">{formatDateTime(d.scheduled_at)}</td>
+                              <td className="px-4 py-3 text-neutral-600">{formatDateTime(d.start_time)}</td>
+                              <td className="px-4 py-3 text-neutral-600">{d.end_time ? formatDateTime(d.end_time) : '-'}</td>
+                              <td className="px-4 py-3 text-neutral-600">{d.end_time ? computeTotalTime(d.start_time, d.end_time) : '-'}</td>
                               <td className="px-4 py-3 text-neutral-600 capitalize">{d.defense_type}</td>
                               <td className="px-4 py-3 text-neutral-600">{d.modality || 'Online'}</td>
                               <td className="px-4 py-3">
@@ -654,59 +653,6 @@ export default function MeetingSchedule() {
                 document.body
               )}
 
-            {/* Conflict Resolution Modal */}
-            {conflictData &&
-              typeof document !== 'undefined' &&
-              createPortal(
-                <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-                  <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-                    <h2 className="text-lg font-semibold text-neutral-800 mb-2">
-                      Schedule Conflict Detected
-                    </h2>
-                    {pendingPayload && Number(pendingPayload.partial_time) === 1 ? (
-                      <p className="text-sm text-neutral-600 mb-4">
-                        You will start at <strong>{formatDateTime(conflictData.effective_start_time)}</strong> and
-                        have a total time of <strong>{formatOverlap(conflictData.effective_minutes)}</strong>, will that be okay?
-                      </p>
-                    ) : (
-                      <p className="text-sm text-neutral-600 mb-4">
-                        This schedule overlaps with another meeting and <strong>{formatOverlap(conflictData.max_overlap_minutes)}</strong> will
-                        be taken from your allotted schedule. How would you like to proceed?
-                      </p>
-                    )}
-                    <div className="space-y-2">
-                      {pendingPayload && Number(pendingPayload.partial_time) === 1 && (
-                        <Button
-                          type="button"
-                          variant="primary"
-                          className="w-full"
-                          onClick={handleConflictAcceptPartial}
-                        >
-                          Yes, book with partial time
-                        </Button>
-                      )}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleConflictWaitPending}
-                      >
-                        Wait for the other meeting to finish / get cancelled
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="error"
-                        className="w-full"
-                        onClick={() => { setConflictData(null); setPendingPayload(null); }}
-                      >
-                        Cancel booking
-                      </Button>
-                    </div>
-                  </div>
-                </div>,
-                document.body
-              )}
-
             {/* Reschedule Modal */}
             {rescheduleModal &&
               typeof document !== 'undefined' &&
@@ -761,6 +707,38 @@ export default function MeetingSchedule() {
                         disabled={!rescheduleForm.date || !rescheduleForm.startTime || !rescheduleForm.endTime}
                       >
                         Reschedule
+                      </Button>
+                    </div>
+                  </div>
+                </div>,
+                document.body
+              )}
+
+            {overlapWarning &&
+              typeof document !== 'undefined' &&
+              createPortal(
+                <div className="fixed inset-0 flex items-center justify-center z-[70] bg-black bg-opacity-40">
+                  <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+                    <h2 className="text-lg font-semibold text-neutral-800 mb-2">Schedule Overlap Detected</h2>
+                    <p className="text-sm text-neutral-600 mb-3">{overlapWarning.message}</p>
+                    <div className="rounded-lg border border-warning-200 bg-warning-50 p-3 mb-4 text-sm text-warning-800">
+                      <p>Requested total time: <strong>{formatMinutes(overlapWarning.candidate_total_minutes)}</strong></p>
+                      <p>Overlap: <strong>{formatMinutes(overlapWarning.max_overlap_minutes)}</strong></p>
+                      <p>Time left if you proceed: <strong>{formatMinutes(overlapWarning.effective_minutes)}</strong></p>
+                    </div>
+                    <div className="flex justify-end space-x-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setOverlapWarning(null);
+                          setPendingSubmitPayload(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="button" variant="primary" onClick={handleProceedWithOverlap}>
+                        Proceed Anyway
                       </Button>
                     </div>
                   </div>

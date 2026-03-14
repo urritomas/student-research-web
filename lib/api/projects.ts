@@ -90,7 +90,8 @@ export interface ScheduleDefenseResult {
     id: string;
     project_id: string;
     defense_type: 'proposal' | 'midterm' | 'final';
-    scheduled_at: string;
+    start_time: string;
+    end_time: string | null;
     location?: string;
     status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
     created_by: string;

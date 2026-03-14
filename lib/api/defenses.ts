@@ -10,7 +10,8 @@ export interface Defense {
   project_title: string;
   project_code: string;
   defense_type: 'proposal' | 'midterm' | 'final';
-  scheduled_at: string;
+  start_time: string;
+  end_time: string | null;
   location: string;
   modality: string;
   status: string;
@@ -22,7 +23,8 @@ export interface Defense {
 export interface CreateDefensePayload {
   project_id: string;
   defense_type: string;
-  scheduled_at: string;
+  start_time: string;
+  end_time?: string;
   location: string;
   modality: string;
 }

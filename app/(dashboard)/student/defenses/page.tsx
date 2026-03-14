@@ -87,11 +87,14 @@ export default function StudentDefensesPage() {
                 <div className="space-y-3 text-neutral-700">
                   <div className="flex items-center gap-3">
                     <FiCalendar className="text-accent-500 flex-shrink-0" />
-                    <span>{formatDate(defense.scheduled_at)}</span>
+                    <span>{formatDate(defense.start_time)}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <FiClock className="text-accent-500 flex-shrink-0" />
-                    <span>{formatTime(defense.scheduled_at)}</span>
+                    <span>
+                      {formatTime(defense.start_time)}
+                      {defense.end_time ? ` - ${formatTime(defense.end_time)}` : ''}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <FiMapPin className="text-accent-500 flex-shrink-0" />

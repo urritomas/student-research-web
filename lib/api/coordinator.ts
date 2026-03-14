@@ -49,7 +49,8 @@ export interface Defense {
   id: string;
   project_id: string;
   defense_type: string;
-  scheduled_at: string;
+  start_time: string;
+  end_time: string | null;
   location: string;
   modality: string;
   status: string;
@@ -62,6 +63,19 @@ export interface Defense {
   project_code: string;
   created_by_name: string;
   verified_by_name?: string;
+}
+
+export interface VerifyDefenseConflict {
+  conflict: true;
+  message: string;
+  conflicts: Array<{
+    domain: string;
+    defense_id: string;
+    project_id: string;
+    start_time: string;
+    end_time: string | null;
+    participant_id?: string;
+  }>;
 }
 
 // ─── Dashboard ──────────────────────────────────────────────────────────────
@@ -116,8 +130,8 @@ export function getPendingDefenses() {
   return get<Defense[]>('/coordinator/defenses/pending');
 }
 
-export function verifyDefense(defenseId: string, payload: { venue?: string; verifiedSchedule?: string; notes?: string }) {
-  return post<Defense>(`/coordinator/defenses/${defenseId}/verify`, payload);
+export function verifyDefense(defenseId: string, payload: { venue?: string; verifiedSchedule?: string; verifiedEndTime?: string; notes?: string; forceApprove?: boolean }) {
+  return post<Defense | VerifyDefenseConflict>(`/coordinator/defenses/${defenseId}/verify`, payload);
 }
 
 export function rejectDefense(defenseId: string, notes?: string) {
