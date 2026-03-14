@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useRef, useState } from 'react';
-import Cropper from 'react-easy-crop';
+import Cropper, { Area } from 'react-easy-crop';
 import { uploadAvatar, uploadCroppedAvatar } from '../lib/api/upload';
 import { getCroppedImg } from '../lib/image/crop';
 
@@ -26,7 +26,7 @@ export default function AvatarUploader({ onUploaded, initialSrc = null }: Props)
     setCropping(true);
   };
 
-  const onCropComplete = useCallback((area, areaPixels) => {
+  const onCropComplete = useCallback((area: Area, areaPixels: Area) => {
     setCroppedAreaPixels(areaPixels);
   }, []);
 

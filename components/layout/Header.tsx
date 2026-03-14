@@ -167,7 +167,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
         </div>
         <div>
           <h2 className="text-sm font-semibold text-darkSlateBlue whitespace-nowrap">Student Research</h2>
-          <p className="text-xs text-neutral-500 capitalize whitespace-nowrap">{user.role}</p>
+          <p className="text-xs text-neutral-500 capitalize whitespace-nowrap">{user?.role || 'Guest'}</p>
         </div>
       </div>
       <div className="flex items-center justify-between px-6 py-3">
