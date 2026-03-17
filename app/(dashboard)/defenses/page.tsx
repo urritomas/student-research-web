@@ -16,6 +16,7 @@ interface ScheduledDefense {
   project_code: string;
   start_time: string;
   end_time: string;
+  scheduled_at?: string;
   defense_type: string;
   location: string;
   modality: string;
@@ -41,29 +42,46 @@ interface OverlapConflictResponse {
   message: string;
 }
 
-function parseNaiveDate(iso: string) {
+function parseNaiveDate(iso?: string | null) {
+  if (!iso) return null;
   // The API stores wall-clock datetimes without timezone info but
   // JSON serialisation may add a trailing "Z".  Strip it so the
   // browser interprets the value as local time, not UTC.
-  return new Date(iso.replace(/Z$/i, ''));
+  const parsed = new Date(iso.replace(/Z$/i, ''));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function formatDateTime(iso: string) {
-  return parseNaiveDate(iso).toLocaleString('en-US', {
+function formatDateTime(iso?: string | null) {
+  const parsed = parseNaiveDate(iso);
+  if (!parsed) return '-';
+  return parsed.toLocaleString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
     hour: 'numeric', minute: '2-digit',
     hour12: true,
   });
 }
 
-function computeTotalTime(start: string, end: string) {
-  const diffMs = Math.abs(parseNaiveDate(end).getTime() - parseNaiveDate(start).getTime());
+function computeTotalTime(start?: string | null, end?: string | null) {
+  const startDate = parseNaiveDate(start);
+  const endDate = parseNaiveDate(end);
+  if (!startDate || !endDate) return '-';
+
+  const diffMs = Math.abs(endDate.getTime() - startDate.getTime());
   const totalMinutes = Math.round(diffMs / 60000);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
   if (hours > 0) return `${hours}h`;
   return `${minutes}m`;
+}
+
+function normalizeDefense(item: any): ScheduledDefense {
+  const start = item?.start_time || item?.scheduled_at || '';
+  return {
+    ...item,
+    start_time: start,
+    end_time: item?.end_time || '',
+  };
 }
 
 function formatMinutes(minutes: number) {
@@ -167,7 +185,10 @@ export default function MeetingSchedule() {
         const res = await fetch('/api/defenses', { credentials: 'include' }); 
         if (!res.ok) throw new Error('Failed to fetch defenses');
         const data = await res.json();
-        if (!cleared) setDefenses(data);
+        if (!cleared) {
+          const normalized = Array.isArray(data) ? data.map(normalizeDefense) : [];
+          setDefenses(normalized);
+        }
       } catch (err) {
         console.error('Failed to load defenses:', err);
       } finally {
@@ -190,7 +211,8 @@ export default function MeetingSchedule() {
     const refreshRes = await fetch('/api/defenses', { credentials: 'include' });
     if (refreshRes.ok) {
       const data = await refreshRes.json();
-      setDefenses(data);
+      const normalized = Array.isArray(data) ? data.map(normalizeDefense) : [];
+      setDefenses(normalized);
     }
   }
 
