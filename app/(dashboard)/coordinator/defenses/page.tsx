@@ -38,6 +38,15 @@ function formatDateTime(iso?: string | null) {
   });
 }
 
+function formatMinutes(minutes: number) {
+  const safeMinutes = Math.max(0, Math.round(minutes));
+  const hours = Math.floor(safeMinutes / 60);
+  const mins = safeMinutes % 60;
+  if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+  if (hours > 0) return `${hours}h`;
+  return `${mins}m`;
+}
+
 function normalizeDefenseTimes(defense: Defense): Defense {
   const fallbackStart = (defense as Defense & { scheduled_at?: string }).scheduled_at || '';
   return {
@@ -85,6 +94,9 @@ export default function CoordinatorDefensesPage() {
     verifiedSchedule?: string;
     verifiedEndTime?: string;
     notes?: string;
+    max_overlap_minutes?: number;
+    candidate_total_minutes?: number;
+    effective_minutes?: number;
     conflicts: Array<{ domain: string; defense_id: string; project_id: string; start_time: string; end_time: string | null }>;
   } | null>(null);
 
@@ -141,6 +153,9 @@ export default function CoordinatorDefensesPage() {
         defenseId: selectedDefense.id,
         venue: venue || undefined,
         notes: notes || undefined,
+        max_overlap_minutes: res.data.max_overlap_minutes,
+        candidate_total_minutes: res.data.candidate_total_minutes,
+        effective_minutes: res.data.effective_minutes,
         conflicts: res.data.conflicts,
       });
     } else if (!res.error) {
@@ -170,6 +185,9 @@ export default function CoordinatorDefensesPage() {
         verifiedSchedule,
         verifiedEndTime,
         notes: notes || undefined,
+        max_overlap_minutes: res.data.max_overlap_minutes,
+        candidate_total_minutes: res.data.candidate_total_minutes,
+        effective_minutes: res.data.effective_minutes,
         conflicts: res.data.conflicts,
       });
     } else if (!res.error) {
@@ -566,6 +584,13 @@ export default function CoordinatorDefensesPage() {
           <div className="rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-sm text-warning-800">
             {uniqueConflictCount} overlapping schedule{uniqueConflictCount === 1 ? '' : 's'} detected.
           </div>
+          {typeof conflictPrompt?.candidate_total_minutes === 'number' && (
+            <div className="rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-sm text-warning-800 space-y-1">
+              <p>Requested total time: <strong>{formatMinutes(conflictPrompt.candidate_total_minutes)}</strong></p>
+              <p>Overlap: <strong>{formatMinutes(conflictPrompt.max_overlap_minutes || 0)}</strong></p>
+              <p>Time left if you proceed: <strong>{formatMinutes(conflictPrompt.effective_minutes || 0)}</strong></p>
+            </div>
+          )}
           {uniqueConflictSchedules.length > 0 && (
             <div className="rounded-lg border border-neutral-200 bg-white px-3 py-2">
               <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 mb-2">

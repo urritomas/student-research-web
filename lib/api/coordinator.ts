@@ -68,6 +68,9 @@ export interface Defense {
 export interface VerifyDefenseConflict {
   conflict: true;
   message: string;
+  max_overlap_minutes?: number;
+  candidate_total_minutes?: number;
+  effective_minutes?: number;
   conflicts: Array<{
     domain: string;
     defense_id: string;
