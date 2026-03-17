@@ -24,8 +24,10 @@ import {
   type Defense,
 } from '@/lib/api/coordinator';
 
-function formatDateTime(iso: string) {
+function formatDateTime(iso?: string | null) {
+  if (!iso) return '-';
   const localWallClock = new Date(iso.replace(/Z$/i, ''));
+  if (Number.isNaN(localWallClock.getTime())) return '-';
   return localWallClock.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -34,6 +36,15 @@ function formatDateTime(iso: string) {
     minute: '2-digit',
     hour12: true,
   });
+}
+
+function normalizeDefenseTimes(defense: Defense): Defense {
+  const fallbackStart = (defense as Defense & { scheduled_at?: string }).scheduled_at || '';
+  return {
+    ...defense,
+    start_time: defense.start_time || fallbackStart,
+    end_time: defense.end_time || null,
+  };
 }
 
 type DefenseVariant = 'success' | 'warning' | 'error' | 'default' | 'primary';
@@ -87,8 +98,8 @@ export default function CoordinatorDefensesPage() {
       getPendingDefenses(),
       getAllDefenses(),
     ]);
-    if (pendingRes.data) setPendingDefenses(pendingRes.data);
-    if (allRes.data) setAllDefenses(allRes.data);
+    if (pendingRes.data) setPendingDefenses(pendingRes.data.map(normalizeDefenseTimes));
+    if (allRes.data) setAllDefenses(allRes.data.map(normalizeDefenseTimes));
     setLoading(false);
   }
 
@@ -207,7 +218,7 @@ export default function CoordinatorDefensesPage() {
       if (sortBy === 'status') {
         return (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9);
       }
-      return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+      return new Date((a.start_time || '').replace(/Z$/i, '')).getTime() - new Date((b.start_time || '').replace(/Z$/i, '')).getTime();
     });
   })();
 
