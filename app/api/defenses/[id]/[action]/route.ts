@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+const RAW_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+const API_BASE_URL = (() => {
+  const base = RAW_API_BASE_URL.replace(/\/+$/, '');
+  return base.endsWith('/api') ? base : `${base}/api`;
+})();
 
 export async function PATCH(
   req: NextRequest,
