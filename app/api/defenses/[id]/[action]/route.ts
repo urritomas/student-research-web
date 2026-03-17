@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; action: string }> }
@@ -12,7 +14,7 @@ export async function PATCH(
 
   const body = action === 'reschedule' ? await req.json() : undefined;
 
-  const res = await fetch(`http://localhost:4000/api/defenses/${id}/${action}`, {
+  const res = await fetch(`${API_BASE_URL}/defenses/${id}/${action}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+
 function getAuthHeaders(req: NextRequest): Record<string, string> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const sessionToken = req.cookies.get('session_token')?.value;
@@ -15,7 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const res = await fetch('http://localhost:4000/api/defenses/propose', {
+    const res = await fetch(`${API_BASE_URL}/defenses/propose`, {
       method: 'POST',
       headers: getAuthHeaders(req),
       body: JSON.stringify(body),
