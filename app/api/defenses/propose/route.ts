@@ -20,11 +20,15 @@ function getAuthHeaders(req: NextRequest): Record<string, string> {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const normalizedBody = {
+      ...body,
+      scheduled_at: null,
+    };
 
     const res = await fetch(`${API_BASE_URL}/defenses/propose`, {
       method: 'POST',
       headers: getAuthHeaders(req),
-      body: JSON.stringify(body),
+      body: JSON.stringify(normalizedBody),
     });
 
     const text = await res.text();
