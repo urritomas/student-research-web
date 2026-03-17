@@ -11,6 +11,8 @@ import { useRouter, useParams } from 'next/navigation';
 import StatusIcon from '@/components/StatusIcon';
 import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
 import { getProject, getProjectMembers, type Project, type ProjectMember } from '@/lib/api/projects';
+import PaperVersionTimeline from '@/components/PaperVersionTimeline';
+import { getPaperVersions, type PaperVersion } from '@/lib/api/paperVersions';
 
 export default function AdviserProjectDetailPage() {
   const router = useRouter();
@@ -21,6 +23,8 @@ export default function AdviserProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [members, setMembers] = useState<ProjectMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paperVersions, setPaperVersions] = useState<PaperVersion[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,6 +43,26 @@ export default function AdviserProjectDetailPage() {
     };
 
     fetchData();
+  }, [projectId]);
+
+  const loadPaperVersions = async () => {
+    setVersionsLoading(true);
+    try {
+      const res = await getPaperVersions(projectId);
+      if (res.data) {
+        setPaperVersions(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch paper versions:', err);
+    } finally {
+      setVersionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (projectId) {
+      loadPaperVersions();
+    }
   }, [projectId]);
 
   const handleBookMeeting = () => {
@@ -216,6 +240,17 @@ export default function AdviserProjectDetailPage() {
             </Card>
           </div>
         </div>
+
+        {/* Paper Version Control - Full Width */}
+        <Card>
+          <PaperVersionTimeline
+            projectId={project.id}
+            paperStandard={project.paper_standard}
+            versions={paperVersions}
+            loading={versionsLoading}
+            onRefresh={loadPaperVersions}
+          />
+        </Card>
       </div>
     </DashboardLayout>
   );
