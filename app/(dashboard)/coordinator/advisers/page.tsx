@@ -9,9 +9,11 @@ import { FiUserPlus, FiTrash2, FiSearch } from 'react-icons/fi';
 import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
 import {
   getInstitutionAdvisers,
+  getCourses,
   addAdviserToInstitution,
   removeAdviserFromInstitution,
   type InstitutionAdviser,
+  type Course,
 } from '@/lib/api/coordinator';
 import { useUserSearch } from '@/lib/hooks/useUserSearch';
 import type { SearchUserResult } from '@/lib/api/users';
@@ -19,6 +21,7 @@ import type { SearchUserResult } from '@/lib/api/users';
 export default function CoordinatorAdvisersPage() {
   const { user, handleLogout } = useDashboardUser('Coordinator');
   const [advisers, setAdvisers] = useState<InstitutionAdviser[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -26,14 +29,19 @@ export default function CoordinatorAdvisersPage() {
   const [selectedUser, setSelectedUser] = useState<SearchUserResult | null>(null);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addError, setAddError] = useState('');
+  const [selectedCourseId, setSelectedCourseId] = useState('');
 
   const [removeTarget, setRemoveTarget] = useState<InstitutionAdviser | null>(null);
   const [removing, setRemoving] = useState(false);
 
   async function loadAdvisers() {
     setLoading(true);
-    const res = await getInstitutionAdvisers();
-    if (res.data) setAdvisers(res.data);
+    const [advisersRes, coursesRes] = await Promise.all([
+      getInstitutionAdvisers(),
+      getCourses(),
+    ]);
+    if (advisersRes.data) setAdvisers(advisersRes.data);
+    if (coursesRes.data) setCourses(coursesRes.data);
     setLoading(false);
   }
 
@@ -59,9 +67,13 @@ export default function CoordinatorAdvisersPage() {
 
   async function handleAdd() {
     if (!selectedUser) return;
+    if (!selectedCourseId) {
+      setAddError('Please select a course before inviting an adviser.');
+      return;
+    }
     setAddingId(selectedUser.id);
     setAddError('');
-    const res = await addAdviserToInstitution(selectedUser.id);
+    const res = await addAdviserToInstitution(selectedUser.id, selectedCourseId);
     if (res.error) {
       setAddError(res.error);
     } else {
@@ -74,6 +86,7 @@ export default function CoordinatorAdvisersPage() {
   function closeAddModal() {
     setIsAddOpen(false);
     setSelectedUser(null);
+    setSelectedCourseId('');
     setAddError('');
     resetSearch();
   }
@@ -101,6 +114,14 @@ export default function CoordinatorAdvisersPage() {
             <FiUserPlus className="mr-2" /> Add Adviser
           </Button>
         </div>
+
+        {!loading && courses.length === 0 && (
+          <Card>
+            <div className="text-center py-4 text-warning-700">
+              Create at least one course before inviting advisers.
+            </div>
+          </Card>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center h-32">
@@ -146,12 +167,31 @@ export default function CoordinatorAdvisersPage() {
           {searchError && (
             <div className="p-3 bg-error-50 text-error-700 text-sm rounded-lg">{searchError}</div>
           )}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Course</label>
+            <select
+              value={selectedCourseId}
+              onChange={(e) => {
+                setSelectedCourseId(e.target.value);
+                setAddError('');
+              }}
+              className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">Select a course</option>
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.course_name} ({course.code})
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="relative">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
             <input
               type="text"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
+              disabled={courses.length === 0}
               className="w-full border border-neutral-300 rounded-lg pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Search by name or email..."
               autoFocus
@@ -203,7 +243,7 @@ export default function CoordinatorAdvisersPage() {
               <Button
                 variant="primary"
                 onClick={handleAdd}
-                disabled={addingId === selectedUser.id}
+                disabled={addingId === selectedUser.id || !selectedCourseId || courses.length === 0}
               >
                 {addingId === selectedUser.id ? 'Adding...' : 'Add'}
               </Button>

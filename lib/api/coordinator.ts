@@ -96,8 +96,8 @@ export function getInstitutionAdvisers() {
   return get<InstitutionAdviser[]>('/coordinator/institution/advisers');
 }
 
-export function addAdviserToInstitution(adviserId: string) {
-  return post<{ success: boolean }>('/coordinator/institution/advisers', { adviserId });
+export function addAdviserToInstitution(adviserId: string, courseId: string) {
+  return post<{ success: boolean; course_id: string; assigned_projects: number }>('/coordinator/institution/advisers', { adviserId, courseId });
 }
 
 export function removeAdviserFromInstitution(adviserId: string) {
