@@ -7,11 +7,28 @@ import JoinGroupCard from '@/components/ui/JoinGroupCard';
 import { FiUsers, FiFolder, FiCalendar, FiTrendingUp } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import { useDashboardUser } from '@/lib/hooks/useDashboardUser';
+import { Calendar, momentLocalizer } from 'react-big-calendar'
+import moment from 'moment'
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import '@/components/Calendar.css'
+import CustomToolBar from '@/components/CalendarToolBar';
+import { useState } from 'react';
 import { MOCK_ADVISER_STATS } from '@/lib/mock-data';
 
 export default function AdviserDashboardPage() {
   const router = useRouter();
   const { user, isLoading, handleLogout } = useDashboardUser('Adviser');
+
+  const localizer = momentLocalizer(moment);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentView, setCurrentView] = useState('month');
+  const eventList = [
+    {
+      title: 'Board Meeting',
+      start: new Date(2026, 2, 20, 10, 0), // Year, Month (0-indexed), Day, Hour, Min
+      end: new Date(2026, 2, 20, 12, 0),
+    },
+  ];
 
   const stats = [
     { icon: <FiUsers />, label: 'Total Advisees', value: String(MOCK_ADVISER_STATS.totalAdvisees), color: 'bg-accent-100 text-accent-600' },
@@ -34,7 +51,7 @@ export default function AdviserDashboardPage() {
               <p className="text-neutral-600 mt-1">Here's an overview of your advisees and projects</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 md:grid-row-2 lg:grid-cols-4  gap-6">
               {stats.map((stat, idx) => (
                 <Card key={idx} padding="md">
                   <div className="flex items-center gap-4">
@@ -49,9 +66,35 @@ export default function AdviserDashboardPage() {
                 </Card>
               ))}
             </div>
+            
+            {/* Combined Cards */}
+            <div className='grid grid-cols-1 lg-grid-cols-2 gap-6'>
+              <div className='grid grid-row gap-6'>
+                {/* Join a Group Section */}
+                <JoinGroupCard />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Join a Group Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+                  <Card>
+                    <CardTitle>Pending Reviews</CardTitle>
+                    <CardDescription>Documents awaiting your feedback</CardDescription>
+                    <div className="mt-4 space-y-3">
+                      <p className="text-sm text-neutral-600">No pending reviews</p>
+                    </div>
+                  </Card>
+                </div>
+              </div>  
+
+              <Card>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Latest updates from your advisees</CardDescription>
+                <div className="mt-4 space-y-3">
+                  <p className="text-sm text-neutral-600">No recent activity</p>
+                </div>
+              </Card>
+            </div>  
+
+            {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
               <JoinGroupCard />
 
               <Card>
@@ -61,7 +104,7 @@ export default function AdviserDashboardPage() {
                   <p className="text-sm text-neutral-600">No recent activity</p>
                 </div>
               </Card>
-            </div>
+            </div>           
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
@@ -71,7 +114,29 @@ export default function AdviserDashboardPage() {
                   <p className="text-sm text-neutral-600">No pending reviews</p>
                 </div>
               </Card>
-            </div>
+            </div> */}
+
+            <Card>
+              <CardTitle>Upcoming Events</CardTitle>
+              <CardDescription>Schedule of defenses and meetings</CardDescription>
+              <div className="mt-4 h-96 rounded-lg border border-neutral-200 overflow-hidden bg-white">
+                <Calendar
+                  localizer={localizer}
+                  events={eventList}
+                  startAccessor="start"
+                  endAccessor="end"
+                  style={{ height: '100%' }}
+                  date={currentDate}
+                  view={currentView}
+                  onNavigate={(date: Date) => setCurrentDate(date)}
+                  onView={(view: string) => setCurrentView(view)}
+                  components={{
+                    toolbar: CustomToolBar,
+                  }}
+                />
+              </div>
+            </Card>
+
           </>
         )}
       </div>
