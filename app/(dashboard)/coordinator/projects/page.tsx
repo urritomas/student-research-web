@@ -12,6 +12,7 @@ import {
   type AdviserWithProjects,
   type InstitutionProject,
 } from '@/lib/api/coordinator';
+import Button from '@/components/Button';
 
 type BadgeVariant = 'success' | 'warning' | 'error' | 'default' | 'primary';
 
@@ -153,6 +154,7 @@ export default function CoordinatorProjectsPage() {
                                     <p className="text-xs text-neutral-500">{proj.project_code} &middot; {formatDate(proj.created_at)}</p>
                                   </div>
                                   <Badge variant={badge.variant}>{badge.label}</Badge>
+                                  {/*Add the booking button here, must match sizes of the card it's in.*/}
                                 </div>
                               );
                             })}
