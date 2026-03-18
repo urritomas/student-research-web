@@ -253,7 +253,7 @@ export default function CoordinatorDefensesPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-primary-700">Defense Management</h1>
-          <p className="text-neutral-600 mt-1">Review, verify, and manage defense schedules</p>
+          <p className="text-neutral-600 mt-1">Manage defense schedules and course-wide defense events</p>
         </div>
 
         {/* Tabs */}
@@ -266,7 +266,7 @@ export default function CoordinatorDefensesPage() {
                 : 'border-transparent text-neutral-500 hover:text-neutral-700'
             }`}
           >
-            Pending Verification
+            Pending
             {pendingDefenses.length > 0 && (
               <span className="ml-2 px-2 py-0.5 text-xs bg-warning-100 text-warning-700 rounded-full">
                 {pendingDefenses.length}
@@ -292,7 +292,7 @@ export default function CoordinatorDefensesPage() {
         ) : displayedDefenses.length === 0 ? (
           <Card>
             <div className="text-center py-8 text-neutral-500">
-              {tab === 'pending' ? 'No defenses pending verification.' : 'No defenses found.'}
+              {tab === 'pending' ? 'No pending defenses.' : 'No defenses found.'}
             </div>
           </Card>
         ) : (
@@ -404,10 +404,10 @@ export default function CoordinatorDefensesPage() {
                         <span className="font-medium text-neutral-500">Proposed by:</span>{' '}
                         <span className="text-neutral-800">{defense.created_by_name || 'Unknown'}</span>
                       </div>
-                      {defense.verified_by_name && (
+                      {defense.adviser_name && (
                         <div>
-                          <span className="font-medium text-neutral-500">Verified by:</span>{' '}
-                          <span className="text-success-600">{defense.verified_by_name}</span>
+                          <span className="font-medium text-neutral-500">Adviser:</span>{' '}
+                          <span className="text-success-600">{defense.adviser_name}</span>
                         </div>
                       )}
                       {defense.verified_schedule && defense.verified_schedule !== defense.start_time && (

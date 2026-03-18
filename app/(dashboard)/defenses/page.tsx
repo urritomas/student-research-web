@@ -217,7 +217,7 @@ export default function MeetingSchedule() {
   }
 
   const submitDefense = async (payload: Record<string, unknown>) => {
-    const res = await fetch('/api/defenses/propose', {
+    const res = await fetch('/api/defenses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -236,11 +236,25 @@ export default function MeetingSchedule() {
       throw new Error(data.error || 'Failed to book meeting.');
     }
 
-    showToast('Defense proposal submitted! Awaiting coordinator approval.', 'success');
+    const createdStatus = data?.status || data?.data?.status;
+    if (createdStatus === 'pending') {
+      showToast('Meeting added to wait queue. It will be auto-scheduled when the slot opens.', 'info');
+    } else {
+      showToast('Meeting booked successfully.', 'success');
+    }
     setOverlapWarning(null);
     setPendingSubmitPayload(null);
     handleClear();
     await refreshDefenses();
+  };
+
+  const handleWaitForSlot = async () => {
+    if (!pendingSubmitPayload) return;
+    try {
+      await submitDefense({ ...pendingSubmitPayload, wait_for_slot: true });
+    } catch (err: any) {
+      showToast(err.message || 'Failed to queue meeting.', 'error');
+    }
   };
 
   const handleSubmit = async () => {
@@ -259,15 +273,6 @@ export default function MeetingSchedule() {
       };
 
       await submitDefense(payload);
-    } catch (err: any) {
-      showToast(err.message || 'Failed to book meeting.', 'error');
-    }
-  };
-
-  const handleProceedWithOverlap = async () => {
-    if (!pendingSubmitPayload) return;
-    try {
-      await submitDefense({ ...pendingSubmitPayload, force_proceed: true });
     } catch (err: any) {
       showToast(err.message || 'Failed to book meeting.', 'error');
     }
@@ -726,16 +731,17 @@ export default function MeetingSchedule() {
                     <div className="flex justify-end space-x-3">
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="error"
                         onClick={() => {
                           setOverlapWarning(null);
                           setPendingSubmitPayload(null);
+                          showToast('Booking cancelled.', 'info');
                         }}
                       >
                         Cancel
                       </Button>
-                      <Button type="button" variant="primary" onClick={handleProceedWithOverlap}>
-                        Proceed Anyway
+                      <Button type="button" variant="primary" onClick={handleWaitForSlot}>
+                        Wait
                       </Button>
                     </div>
                   </div>

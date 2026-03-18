@@ -48,6 +48,7 @@ export interface DashboardData {
 export interface Defense {
   id: string;
   project_id: string;
+  adviser_id: string;
   defense_type: string;
   start_time: string;
   end_time: string | null;
@@ -55,14 +56,12 @@ export interface Defense {
   modality: string;
   status: string;
   venue: string | null;
-  verified_by: string | null;
-  verified_at: string | null;
   verified_schedule: string | null;
   proposed_schedule: string | null;
   project_title: string;
   project_code: string;
   created_by_name: string;
-  verified_by_name?: string;
+  adviser_name?: string;
 }
 
 export interface VerifyDefenseConflict {

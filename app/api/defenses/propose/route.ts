@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const res = await fetch(`${API_BASE_URL}/defenses/propose`, {
+    // Keep this legacy route for compatibility; adviser flow now uses direct dynamic scheduling.
+    const res = await fetch(`${API_BASE_URL}/defenses`, {
       method: 'POST',
       headers: getAuthHeaders(req),
       body: JSON.stringify(body),
