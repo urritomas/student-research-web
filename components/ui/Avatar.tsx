@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 
-const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
+const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api')
+  .replace(/\/api\/?$/, '')
+  .replace(/\/+$/, '');
 
 function resolveImageSrc(src?: string): string | undefined {
   if (!src) return undefined;
   if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:')) return src;
-  if (src.startsWith('/uploads/')) return `${API_ORIGIN}${src}`;
-  return `${API_ORIGIN}${src}`;
+  const normalizedPath = src.startsWith('/') ? src : `/${src}`;
+  return new URL(normalizedPath, `${API_ORIGIN}/`).toString();
 }
 
 export interface AvatarProps {
