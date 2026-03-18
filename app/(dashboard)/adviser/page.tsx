@@ -68,7 +68,7 @@ export default function AdviserDashboardPage() {
             </div>
             
             {/* Combined Cards */}
-            <div className='grid grid-cols-1 lg-grid-cols-2 gap-6'>
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
               <div className='grid grid-row gap-6'>
                 {/* Join a Group Section */}
                 <JoinGroupCard />
