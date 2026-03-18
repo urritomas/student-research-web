@@ -36,7 +36,9 @@ export default function CoordinatorCoursesPage() {
   const [defenseTarget, setDefenseTarget] = useState<Course | null>(null);
   const [defenseForm, setDefenseForm] = useState({
     defenseType: 'proposal' as 'proposal' | 'midterm' | 'final',
-    scheduledAt: '',
+    date: '',
+    startTime: '',
+    endTime: '',
     location: '',
     venue: '',
   });
@@ -122,7 +124,7 @@ export default function CoordinatorCoursesPage() {
 
   function openDefenseModal(course: Course) {
     setDefenseTarget(course);
-    setDefenseForm({ defenseType: 'proposal', scheduledAt: '', location: '', venue: '' });
+    setDefenseForm({ defenseType: 'proposal', date: '', startTime: '', endTime: '', location: '', venue: '' });
     setDefenseError('');
     setDefenseSuccess('');
   }
@@ -135,8 +137,8 @@ export default function CoordinatorCoursesPage() {
 
   async function handleScheduleDefense() {
     if (!defenseTarget) return;
-    if (!defenseForm.scheduledAt || !defenseForm.location.trim()) {
-      setDefenseError('Schedule date/time and location are required.');
+    if (!defenseForm.date || !defenseForm.startTime || !defenseForm.endTime || !defenseForm.location.trim()) {
+      setDefenseError('Date, start time, end time, and location are required.');
       return;
     }
     setDefenseSubmitting(true);
@@ -144,7 +146,9 @@ export default function CoordinatorCoursesPage() {
     setDefenseSuccess('');
     const res = await createDefenseForCourse(defenseTarget.id, {
       defenseType: defenseForm.defenseType,
-      scheduledAt: defenseForm.scheduledAt,
+      date: defenseForm.date,
+      startTime: defenseForm.startTime,
+      endTime: defenseForm.endTime,
       location: defenseForm.location.trim(),
       venue: defenseForm.venue.trim() || undefined,
     });
@@ -322,13 +326,33 @@ export default function CoordinatorCoursesPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Scheduled Date & Time</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Date</label>
                 <input
-                  type="datetime-local"
-                  value={defenseForm.scheduledAt}
-                  onChange={(e) => setDefenseForm((p) => ({ ...p, scheduledAt: e.target.value }))}
+                  type="date"
+                  value={defenseForm.date}
+                  onChange={(e) => setDefenseForm((p) => ({ ...p, date: e.target.value }))}
                   className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Start Time</label>
+                  <input
+                    type="time"
+                    value={defenseForm.startTime}
+                    onChange={(e) => setDefenseForm((p) => ({ ...p, startTime: e.target.value }))}
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">End Time</label>
+                  <input
+                    type="time"
+                    value={defenseForm.endTime}
+                    onChange={(e) => setDefenseForm((p) => ({ ...p, endTime: e.target.value }))}
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Location</label>

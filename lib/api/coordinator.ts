@@ -148,7 +148,9 @@ export function setDefenseVenue(defenseId: string, venue: string) {
 
 export interface CreateCourseDefensePayload {
   defenseType: 'proposal' | 'midterm' | 'final';
-  scheduledAt: string;
+  date: string;
+  startTime: string;
+  endTime: string;
   location: string;
   venue?: string;
 }
