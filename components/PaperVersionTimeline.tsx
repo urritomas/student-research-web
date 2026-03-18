@@ -96,8 +96,20 @@ function VersionCard({
     e.stopPropagation();
     setDownloading(true);
     try {
+      // Extract session token from cookie (same as API client does)
+      const tokenMatch = document.cookie.match(/(?:^|;\s*)session_token=([^;]*)/);
+      const token = tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
+
       const url = getPaperVersionDownloadUrl(projectId, version.id);
-      const res = await fetch(url, { credentials: 'include' });
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const res = await fetch(url, { 
+        credentials: 'include',
+        headers,
+      });
       if (!res.ok) throw new Error('Download failed');
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
