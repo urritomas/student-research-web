@@ -487,24 +487,6 @@ export default function MeetingSchedule() {
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-neutral-700 mb-2">Defense Type</p>
-                    <div className="space-y-1">
-                      {['Proposal', 'Midterm', 'Finals'].map(type => (
-                        <label key={type} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="defenseType"
-                            value={type}
-                            checked={form.defenseType === type}
-                            onChange={handleChange}
-                            className="accent-primary-500"
-                          />
-                          <span className="text-sm text-neutral-700">{type}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
                 {/* Room Option - only for Face-to-Face */}
@@ -578,9 +560,7 @@ export default function MeetingSchedule() {
                           <th className="px-4 py-3 font-medium text-neutral-600">Start Time</th>
                           <th className="px-4 py-3 font-medium text-neutral-600">End Time</th>
                           <th className="px-4 py-3 font-medium text-neutral-600">Total Time</th>
-                          <th className="px-4 py-3 font-medium text-neutral-600">Type</th>
                           <th className="px-4 py-3 font-medium text-neutral-600">Modality</th>
-                          <th className="px-4 py-3 font-medium text-neutral-600">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-100">
@@ -599,13 +579,7 @@ export default function MeetingSchedule() {
                               <td className="px-4 py-3 text-neutral-600">{formatDateTime(d.start_time)}</td>
                               <td className="px-4 py-3 text-neutral-600">{d.end_time ? formatDateTime(d.end_time) : '-'}</td>
                               <td className="px-4 py-3 text-neutral-600">{d.end_time ? computeTotalTime(d.start_time, d.end_time) : '-'}</td>
-                              <td className="px-4 py-3 text-neutral-600 capitalize">{d.defense_type}</td>
                               <td className="px-4 py-3 text-neutral-600">{d.modality || 'Online'}</td>
-                              <td className="px-4 py-3">
-                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full capitalize ${style}`}>
-                                  {d.status}
-                                </span>
-                              </td>
                             </tr>
                           );
                         })}
